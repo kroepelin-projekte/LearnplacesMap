@@ -17,11 +17,6 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
     private const INSERT = 'insert';
     private const CREATE = 'create';
 
-    private const TOUR_VIEW = 'tourView';
-    private const TOUR_CREATE = 'tourCreate';
-    private const TOUR_ADD_ITEM = 'tourAddItem';
-    private const TOUR_SAVE_ORDER = 'tourSaveOrder';
-
     private const COLLECTION_VIEW = 'collectionView';
     private const COLLECTION_CREATE = 'collectionCreate';
 
@@ -48,24 +43,28 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
         $this->renderer = $DIC->ui()->renderer();
         $this->database = $DIC->database();
         $this->mode_service = new ModeService($this->factory);
-        $this->tour_service = new TourService($this->factory, $DIC);
     }
 
     public function executeCommand(): void
     {
-        $cmd = $this->ctrl->getCmd();
+        $this->hideToolMenu();
 
-        switch ($cmd) {
-            case self::INSERT:
-            case self::CREATE:
-            case self::TOUR_VIEW:
-            case self::TOUR_CREATE:
-            case self::TOUR_ADD_ITEM:
-            case self::TOUR_SAVE_ORDER:
-            case self::COLLECTION_VIEW:
-            case self::COLLECTION_CREATE:
-                $this->$cmd();
+        $cmd = $this->ctrl->getCmd();
+        $next_class = $this->ctrl->getNextClass();
+
+        switch ($next_class) {
+            case strtolower(ilLearnplacesMapTourGUI::class):
+                $this->ctrl->forwardCommand(new $next_class($this));
                 break;
+            default:
+                switch ($cmd) {
+                    case self::INSERT:
+                    case self::CREATE:
+                    case self::COLLECTION_VIEW:
+                    case self::COLLECTION_CREATE:
+                        $this->$cmd();
+                        break;
+                }
         }
     }
 
@@ -97,7 +96,7 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
 
         switch ($mode) {
             case ModeService::MODE_TOUR:
-                $this->ctrl->redirect($this, self::TOUR_VIEW);
+                $this->ctrl->redirectByClass(ilLearnplacesMapTourGUI::class, ilLearnplacesMapTourGUI::TOUR_VIEW);
                 break;
             case ModeService::MODE_COLLECTION:
                 $this->ctrl->redirect($this, self::COLLECTION_VIEW);
@@ -136,71 +135,6 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
             'mode' => $mode,
         ]);
         $this->returnToParent();
-    }
-
-    /**
-     * @throws ilCtrlException
-     */
-    private function tourView(): void
-    {
-        $this->hideToolMenu();
-
-        $add_item_button = $this->tour_service->addItemButton(
-            $this->ctrl->getLinkTargetByClass(self::class, self::TOUR_ADD_ITEM),
-        );
-
-        $table = $this->tour_service->getTourTable(
-            $this->ctrl->getLinkTargetByClass(self::class, self::TOUR_SAVE_ORDER),
-        );
-
-        $this->tpl->setContent($this->renderer->render([
-            $add_item_button['modal'],
-            $add_item_button['button'],
-            $this->factory->divider()->horizontal(),
-            $table,
-        ]));
-    }
-
-    /**
-     * @throws ilCtrlException
-     */
-    private function tourCreate(): void
-    {
-        $form = $this->tour_service->getTourForm(
-            '#',
-        )->withRequest($this->request);
-
-        $form->getData();
-
-        if ($form->getError()) {
-            $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_FAILURE, $form->getError(), true);
-            $this->ctrl->redirect($this, self::TOUR_VIEW);
-        }
-
-        $this->updateElement([
-            'mode' => 'tour',
-        ]);
-        $this->returnToParent();
-    }
-
-    private function tourSaveOrder()
-    {
-        $d = 0;
-    }
-
-    private function tourAddItem(): void
-    {
-        $map_id = (int) $this->getProperties()['id'];
-
-        $next_id = $this->database->nextId('kpg_lmap_tour');
-
-        $this->database->insert('kpg_lmap_tour', [
-            'id' => ['integer', $next_id],
-            'map_id' => ['integer', $map_id],
-            'position' => ['integer', $next_id],
-        ]);
-
-        $this->ctrl->redirect($this, self::TOUR_VIEW);
     }
 
     public function getElementHTML(string $a_mode, array $a_properties, string $plugin_version): string

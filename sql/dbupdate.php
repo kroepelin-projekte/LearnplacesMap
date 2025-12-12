@@ -35,6 +35,11 @@ if (!$db->tableExists($tour_table_name)) {
             'length' => '4',
             'notnull' => true,
         ],
+        'learnplace_ref_id' => [
+            'type' => 'integer',
+            'length' => '4',
+            'notnull' => true,
+        ],
         'position' => [
             'type' => 'integer',
             'length' => '4',

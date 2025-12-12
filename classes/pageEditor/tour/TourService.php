@@ -10,6 +10,7 @@ use ILIAS\UI\Component\Component;
 use ILIAS\Data\URI;
 use ILIAS\DI\Container;
 use ILIAS\UI\Component\Tree\Tree;
+use ILIAS\UI\URLBuilder;
 
 class TourService
 {
@@ -23,16 +24,28 @@ class TourService
      * @param string $action
      * @return array{button: Component, modal: Component}
      */
-    public function addItemButton(string $action): array
+    public function addItemButton(): array
     {
         $modal = $this->factory->modal()->roundtrip(
             'Lernort hinzufügen',
             $this->getExpandableTreeUI(),
-            [],
-            $action,
+            [
+                'ref_id' => $this->factory->input()->field()->hidden()->withAdditionalOnLoadCode(
+                    fn (string $id): string =>
+                        <<<JS
+                        const hidden_input = document.getElementById('$id');
+                        document.addEventListener('change', (e) => {
+                            if (e.target.matches('input[name="learnplace"]')) {
+                                hidden_input.value = e.target.value
+                            }
+                        })
+                        JS
+                )
+            ],
+            $this->dic->ctrl()->getLinkTargetByClass(\ilLearnplacesMapTourGUI::class, \ilLearnplacesMapTourGUI::TOUR_ADD_ITEM),
         );
 
-        $button = $this->factory->button()->standard('Lernort hinzufügen', $action)->withonClick($modal->getShowSignal());
+        $button = $this->factory->button()->standard('Lernort hinzufügen', '#')->withonClick($modal->getShowSignal());
 
         return [
             'button' => $button,
@@ -59,32 +72,19 @@ class TourService
         );
     }
 
-    public function getTourTable(string $sort_action): Component
+    public function getTourTable(int $map_id): Component
     {
-        #$df = new \ILIAS\Data\Factory();
+        $this->dic->ui()->mainTemplate()->addInlineCss('.c-table-data__positioninput label { display: none; }');
+        $df = new \ILIAS\Data\Factory();
         $request = $this->dic->http()->request();
-        #$request_wrapper = $this->dic->http()->wrapper()->query();
 
         $columns = [
+            'ref_id' => $this->factory->table()->column()->text("REF ID"),
             'title' => $this->factory->table()->column()->text("Title"),
         ];
 
-        // Sammelaktionen -> edit
-        /*$url = $this->ctrl->getLinkTargetByClass(ilLearningVideoVideoGUI::class, ilLearningVideoVideoGUI::SHOW_CONTENT);
-        $url_builder = new URLBuilder($df->uri(ILIAS_HTTP_PATH . '/' . $url));
-        list($url_builder, $action_parameter_token, $row_id_token) = $url_builder->acquireParameters(
-            ['video'],
-            "table_action",
-            "id"
-        );
-        $actions['edit'] = $this->factory->table()->action()->single(
-            $this->lng->txt('edit'),
-            $url_builder,
-            $row_id_token
-        );*/
-
         // Sammelaktionen -> löschen
-        /*$url = $this->ctrl->getLinkTargetByClass(self::class, self::DELETE_VIDEOS_CONFIRMATION);
+        $url = $this->dic->ctrl()->getLinkTargetByClass(\ilLearnplacesMapTourGUI::class, \ilLearnplacesMapTourGUI::TOUR_DELETE_ITEM);
         $url_builder = new URLBuilder($df->uri(ILIAS_HTTP_PATH . '/' . $url));
         list($url_builder, $action_parameter_token, $row_id_token) = $url_builder->acquireParameters(
             ['delete'],
@@ -92,22 +92,21 @@ class TourService
             "ids"
         );
         $actions['delete'] = $this->factory->table()->action()->multi(
-            $this->lng->txt('delete'),
+            $this->dic->language()->txt('delete'),
             $url_builder,
             $row_id_token
-        )->withAsync();*/
+        );
 
-        #$url = $this->ctrl->getLinkTargetByClass(self::class, self::SAVE_ORDER);
-        $url = '#';
-        $target = new URI(ILIAS_HTTP_PATH . '/' . $sort_action);
+        $url = $this->dic->ctrl()->getLinkTargetByClass(\ilLearnplacesMapTourGUI::class, \ilLearnplacesMapTourGUI::TOUR_SAVE_ORDER);
+        $target = new URI(ILIAS_HTTP_PATH . '/' . $url);
 
         return $this->factory->table()->ordering(
             '',
             $columns,
-            new tourTableDataRetrieval(),
+            new tourTableDataRetrieval($map_id),
             $target
         )
-            #->withActions($actions)
+            ->withActions($actions)
             ->withRequest($request);
     }
 
@@ -122,9 +121,118 @@ class TourService
         );
 
         return $this->factory->tree()->expandable("Lernorte", new RepositoryTreeRecursion($this->dic))
-            ->withEnvironment([
+            /*->withEnvironment([
              'icon_factory' => $this->factory->symbol()->icon(),
-            ])
+            ])*/
             ->withData($all_learnplaces_in_course);
+    }
+
+    public function addItem(int $map_id, int $learnplace_ref_id): void
+    {
+        if ($this->itemExists($map_id, $learnplace_ref_id)) {
+            $this->dic->ui()->mainTemplate()->setOnScreenMessage('failure', 'Dieser Lernort ist bereits in dieser Tour enthalten.', true);
+            return;
+        }
+
+        $next_id = $this->dic->database()->nextId('kpg_lmap_tour');
+        $this->dic->database()->insert('kpg_lmap_tour', [
+            'id' => ['integer', $next_id],
+            'map_id' => ['integer', $map_id],
+            'learnplace_ref_id' => ['integer', $learnplace_ref_id],
+            'position' => ['integer', $next_id],
+        ]);
+    }
+
+    private function itemExists(int $map_id, int $learnplace_ref_id): bool
+    {
+        $sql = $this->dic->database()->queryF(
+            <<<SQL
+            SELECT COUNT(*) AS count
+            FROM kpg_lmap_tour
+            WHERE map_id = %s AND learnplace_ref_id = %s
+            SQL,
+            [
+                'integer',
+                'integer',
+            ],
+            [
+                $map_id,
+                $learnplace_ref_id,
+            ]
+        );
+
+        $item = $this->dic->database()->fetchObject($sql);
+        return (bool) $item->count;
+    }
+
+    /**
+     * @param int $map_id
+     * @param int[] $ids
+     * @return void
+     */
+    public function deleteItems(int $map_id, array $ids): void
+    {
+        $ids = array_values(array_unique(array_map('intval', $ids)));
+
+        if (!$ids) {
+            return;
+        }
+
+        $condition = $this->dic->database()->in(
+            'id',
+            $ids,
+            false,
+            'integer',
+        );
+
+        $this->dic->database()->manipulateF(
+            <<<SQL
+            DELETE FROM kpg_lmap_tour
+            WHERE {$condition} AND map_id = %s
+            SQL,
+            [
+                'integer',
+            ],
+            [
+                $map_id,
+            ],
+        );
+    }
+
+    /**
+     * @param int $map_id
+     * @return void
+     */
+    public function deleteAllItems(int $map_id): void
+    {
+        $this->dic->database()->manipulateF(
+            <<<SQL
+            DELETE FROM kpg_lmap_tour
+            WHERE map_id = %s
+            SQL,
+            [
+                'integer',
+            ],
+            [
+                $map_id,
+            ],
+        );
+    }
+
+    public function updatePosition(int $id, int $new_position): void
+    {
+        $this->dic->database()->manipulateF(
+            <<<SQL
+            UPDATE kpg_lmap_tour SET position = %s WHERE id = %s
+            SQL,
+            [
+                'integer',
+                'integer',
+            ],
+            [
+                $new_position,
+                $id,
+            ]
+        );
     }
 }

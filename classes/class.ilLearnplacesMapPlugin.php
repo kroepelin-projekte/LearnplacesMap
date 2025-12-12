@@ -33,7 +33,7 @@ class ilLearnplacesMapPlugin extends ilPageComponentPlugin
             },
         );
 
-        return current($courses)['child'];
+        return current($courses)['child'] ?? false;
     }
 
     public function onDelete(

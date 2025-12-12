@@ -6,24 +6,44 @@ namespace Kpg\Plugins\LearnplacesMap\PageEditor\Tour;
 
 use ILIAS\UI\Component\Table\OrderingBinding;
 use ILIAS\UI\Component\Table\OrderingRowBuilder;
+use ilObject;
 
 class tourTableDataRetrieval implements OrderingBinding
 {
+    public function __construct(
+        protected int $map_id,
+    ) {
+    }
+
     public function getRows(OrderingRowBuilder $row_builder, array $visible_column_ids): \Generator
     {
-        $example_data = [
+        global $DIC;
+        $db = $DIC->database();
+
+        $sql = $db->queryF(
+            <<<SQL
+            SELECT id, map_id, learnplace_ref_id, position
+            FROM kpg_lmap_tour
+            WHERE map_id = %s
+            ORDER BY position
+            SQL,
             [
-                'id' => '1',
-                'title' => 'Video 1',
+                'integer',
             ],
             [
-                'id' => '2',
-                'title' => 'Video 2',
+                $this->map_id
             ]
-        ];
+        );
 
-        foreach ($example_data as $record) {
-            $row_id = (string) $record['id'];
+        while ($row = $db->fetchAssoc($sql)) {
+            $row_id = (string) $row['id'];
+
+            $record = [
+                'id' => $row['id'],
+                'ref_id' => $row['learnplace_ref_id'],
+                'title' => ilObject::_lookupTitle(ilObject::_lookupObjectId($row['learnplace_ref_id'])),
+            ];
+
             yield $row_builder->buildOrderingRow($row_id, $record);
         }
     }
