@@ -143,9 +143,19 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
 
     public function getElementHTML(string $a_mode, array $a_properties, string $plugin_version): string
     {
+        $learnplaces_plugin_is_active = \ilObjectPlugin::getPluginObjectByType('xsrl')->isActive();
+
         $edit_style = '';
         if ($a_mode === "edit") {
-            $edit_style = ' style="pointer-events: none; opacity: 0.5;"';
+            $edit_style = ' style="pointer-events: none;"';
+
+            if (!$learnplaces_plugin_is_active) {
+                return "Learnplaces plugin is not active.";
+            }
+        }
+
+        if (!$learnplaces_plugin_is_active) {
+            return " ";
         }
 
         global $DIC;

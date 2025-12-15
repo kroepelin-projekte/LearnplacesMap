@@ -11,6 +11,10 @@ class ilLearnplacesMapPlugin extends ilPageComponentPlugin
 
     public function isValidParentType(string $a_type): bool
     {
+        if (!\ilObjectPlugin::getPluginObjectByType('xsrl')->isActive()) {
+            return false;
+        }
+
         return (bool) self::isInCourseContext();
     }
 
