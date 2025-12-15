@@ -2,6 +2,9 @@
 
 declare(strict_types=1);
 
+use Kpg\Plugins\LearnplacesMap\PageEditor\Mode\ModeService;
+
+
 class ilLearnplacesMapPlugin extends ilPageComponentPlugin
 {
     public const PLUGIN_ID = "lmap";
@@ -44,6 +47,13 @@ class ilLearnplacesMapPlugin extends ilPageComponentPlugin
         if ($move_operation) {
             return;
         }
-        // todo delete
+
+        global $DIC;
+
+        $map_service = new ModeService($DIC, $DIC->ui()->factory());
+        $map_service->deleteMap(
+            (int) $a_properties['id'],
+            $a_properties['mode'],
+        );
     }
 }

@@ -8,6 +8,7 @@ use ILIAS\GlobalScreen\Services;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Mode\ModeService;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourService;
 use Psr\Http\Message\ServerRequestInterface;
+use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourMap;
 
 /**
  * @ilCtrl_isCalledBy ilLearnplacesMapPluginGUI: ilPCPluggedGUI
@@ -24,11 +25,9 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
     private ilGlobalTemplateInterface $tpl;
     private Services $globalscreen;
     private ServerRequestInterface $request;
-    private ilDBInterface $database;
     protected Factory $factory;
     protected Renderer $renderer;
     private modeService $mode_service;
-    private tourService $tour_service;
 
     public function __construct()
     {
@@ -41,8 +40,7 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
         $this->tpl = $DIC->ui()->mainTemplate();
         $this->factory = $DIC->ui()->factory();
         $this->renderer = $DIC->ui()->renderer();
-        $this->database = $DIC->database();
-        $this->mode_service = new ModeService($this->factory);
+        $this->mode_service = new ModeService($DIC, $this->factory);
     }
 
     public function executeCommand(): void
@@ -123,12 +121,10 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
         }
 
         $mode = $form_data['section']['mode'];
+        $title = $form_data['section']['title'];
+        $description = $form_data['section']['description'];
 
-        $id = $this->database->nextId('kpg_lmap_map');
-        $this->database->insert('kpg_lmap_map', [
-            'id' => ['integer', $id],
-            'mode' => ['text', $mode],
-        ]);
+        $id = $this->mode_service->addMap($mode, $title, $description);
 
         $this->createElement([
             'id' => $id,
@@ -137,24 +133,35 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
         $this->returnToParent();
     }
 
-    public function getElementHTML(string $a_mode, array $a_properties, string $plugin_version): string
-    {
-        if ($a_mode !== "edit") {
-            return "edit";
-        }
-
-        // tour or collection
-        $id = (int) $a_properties['id'];
-        $mode = $a_properties['mode'];
-
-        return "Map ID: $id, Mode: $mode";
-    }
-
     private function hideToolMenu(): void
     {
         $collection = $this->globalscreen->tool()->context()->current()->getAdditionalData();
         if ($collection->exists(ilCOPageEditGSToolProvider::SHOW_EDITOR)) {
             $collection->replace(ilCOPageEditGSToolProvider::SHOW_EDITOR, false);
         }
+    }
+
+    public function getElementHTML(string $a_mode, array $a_properties, string $plugin_version): string
+    {
+        $edit_style = '';
+        if ($a_mode === "edit") {
+            $edit_style = ' style="pointer-events: none; opacity: 0.5;"';
+        }
+
+        global $DIC;
+
+        // tour or collection
+        $id = (int) $a_properties['id'];
+        $mode = $a_properties['mode'];
+
+        if ($mode === ModeService::MODE_TOUR) {
+            $map = new TourMap($DIC, $id);
+            $map_component = $map->getMap();
+            return "<div$edit_style>" . $DIC->ui()->renderer()->render($map_component) . "</div>";
+        }
+
+        // todo mode collection
+
+        return "Map ID: $id, Mode: $mode";
     }
 }

@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourService;
-
+use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourMap;
+use ILIAS\DI\Container;
 
 /**
  * @ilCtrl_IsCalledBy ilLearnplacesMapTourGUI: ilLearnplacesMapPluginGUI
@@ -17,19 +18,23 @@ class ilLearnplacesMapTourGUI
     public const TOUR_SAVE_ORDER = 'tourSaveOrder';
 
     private ilCtrlInterface $ctrl;
-    private TourService $tour_service;
     private \ILIAS\UI\Factory $factory;
     private \ILIAS\UI\Renderer $renderer;
     private ilGlobalTemplateInterface $tpl;
     private \Psr\Http\Message\ServerRequestInterface|\Psr\Http\Message\RequestInterface $request;
     private \ILIAS\HTTP\Services $http;
     private \ILIAS\Refinery\Factory $refinery;
+    private Container $dic;
+    private int $map_id;
+    private TourService $tour_service;
+    private TourMap $map_service;
 
     public function __construct(
         protected ilLearnplacesMapPluginGUI $parent_gui,
     )
     {
         global $DIC;
+        $this->dic = $DIC;
         $this->refinery = $DIC->refinery();
         $this->tpl = $DIC->ui()->mainTemplate();
         $this->ctrl = $DIC->ctrl();
@@ -37,7 +42,9 @@ class ilLearnplacesMapTourGUI
         $this->request = $DIC->http()->request();
         $this->factory = $DIC->ui()->factory();
         $this->renderer = $DIC->ui()->renderer();
-        $this->tour_service = new TourService($this->factory, $DIC);
+        $this->map_id = (int) $this->parent_gui->getProperties()['id'];
+        $this->tour_service = new TourService($DIC, $this->factory);
+        $this->map_service = new TourMap($this->dic, $this->map_id);
     }
 
     public function executeCommand(): void
@@ -64,7 +71,11 @@ class ilLearnplacesMapTourGUI
 
         $table = $this->tour_service->getTourTable((int) $this->parent_gui->getProperties()['id']);
 
+        $map = $this->map_service->getMap();
+
         $this->tpl->setContent($this->renderer->render([
+            $map,
+            $this->factory->divider()->horizontal(),
             $add_item_button['modal'],
             $add_item_button['button'],
             $this->factory->divider()->horizontal(),
@@ -119,26 +130,22 @@ class ilLearnplacesMapTourGUI
             $this->ctrl->redirect($this, self::TOUR_VIEW);
         }
 
-        $map_id = (int) $this->parent_gui->getProperties()['id'];
-
-        $this->tour_service->addItem($map_id, $ref_id);
+        $this->tour_service->addItem($this->map_id, $ref_id);
 
         $this->ctrl->redirect($this, self::TOUR_VIEW);
     }
 
     private function tourDeleteItem(): void
     {
-        $map_id = (int) $this->parent_gui->getProperties()['id'];
-
         $query = $this->http->wrapper()->query();
         if ($query->has('delete_ids')) {
             $ids = $query->retrieve('delete_ids', $this->refinery->kindlyTo()->listOf($this->refinery->kindlyTo()->string()));
 
             if (($ids[0] ?? null) === 'ALL_OBJECTS') {
-                $this->tour_service->deleteAllItems($map_id);
+                $this->tour_service->deleteAllItems($this->map_id);
             } else {
                 $ids = array_map('intval', $ids);
-                $this->tour_service->deleteItems($map_id, $ids);
+                $this->tour_service->deleteItems($this->map_id, $ids);
             }
             $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_SUCCESS, 'Erfolgreich gelöscht', true);
         } else {

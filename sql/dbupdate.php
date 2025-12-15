@@ -14,7 +14,17 @@ if (!$db->tableExists($map_table_name)) {
             'type' => 'text',
             'length' => '255',
             'notnull' => true,
-        ]
+        ],
+        'title' => [
+            'type' => 'text',
+            'length' => '500',
+            'notnull' => true,
+        ],
+        'description' => [
+            'type' => 'text',
+            'length' => '500',
+            'notnull' => true,
+        ],
     ]);
 
     if (!$db->sequenceExists($map_table_name)) {

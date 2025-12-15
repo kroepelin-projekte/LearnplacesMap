@@ -12,11 +12,12 @@ use ILIAS\DI\Container;
 use ILIAS\UI\Component\Tree\Tree;
 use ILIAS\UI\URLBuilder;
 
+
 class TourService
 {
     public function __construct(
-        protected Factory $factory,
         protected Container $dic,
+        protected Factory $factory,
     ) {
     }
 
@@ -120,7 +121,7 @@ class TourService
             ['xsrl']
         );
 
-        return $this->factory->tree()->expandable("Lernorte", new RepositoryTreeRecursion($this->dic))
+        return $this->factory->tree()->expandable("Lernorte", new TourTreeRecursion($this->dic))
             /*->withEnvironment([
              'icon_factory' => $this->factory->symbol()->icon(),
             ])*/

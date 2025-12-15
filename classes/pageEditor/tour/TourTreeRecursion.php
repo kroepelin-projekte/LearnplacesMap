@@ -9,7 +9,7 @@ use ILIAS\UI\Component\Tree\Node;
 use ILIAS\DI\Container;
 
 
-class RepositoryTreeRecursion implements TreeRecursion
+class TourTreeRecursion implements TreeRecursion
 {
     public function __construct(
         protected Container $dic,
@@ -28,7 +28,7 @@ class RepositoryTreeRecursion implements TreeRecursion
         $label .= '<label for="' . $ref_id . '">' . $record['title'] . ' (' . $record['type'] . ', ' . $ref_id . ')</label>';
         // $icon = $environment['icon_factory']->standard($record["type"], '');
 
-        /** @var \ILIAS\UI\Implementation\Component\Tree\Node\Node $node */
+        /** @var Node\Node $node */
         $node = $factory->simple($label, null)->withExpanded(true);
 
         return $node;
