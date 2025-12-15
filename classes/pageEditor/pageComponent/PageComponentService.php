@@ -2,7 +2,7 @@
 
 declare(strict_types=1);
 
-namespace Kpg\Plugins\LearnplacesMap\PageEditor\Mode;
+namespace Kpg\Plugins\LearnplacesMap\PageEditor\PageComponent;
 
 use ILIAS\UI\Component\Input\Container\Form\Standard;
 use ILIAS\UI\Factory;
@@ -11,7 +11,7 @@ use ilLearnplacesMapPluginGUI;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourService;
 
 
-class ModeService
+class PageComponentService
 {
     public const MODE_TOUR = 'tour';
     public const MODE_COLLECTION = 'collection';
@@ -32,6 +32,80 @@ class ModeService
             'description' => ['text', $description],
         ]);
         return $id;
+    }
+
+    public function updateMap(int $map_id, string $title, string $description): void
+    {
+        $this->dic->database()->manipulateF(
+            <<<SQL
+            UPDATE kpg_lmap_map SET title = %s, description = %s WHERE id = %s
+            SQL,
+            [
+                'text',
+                'text',
+                'integer',
+            ],
+            [
+                $title,
+                $description,
+                $map_id,
+            ]
+        );
+    }
+
+    /**
+     * @return array{title: string, description: string}
+     */
+    private function getInfo(int $map_id): array
+    {
+        if ($map_id < 0) {
+            return [
+                'title' => '',
+                'description' => '',
+            ];
+        }
+
+        $db = $this->dic->database();
+        $sql = $db->queryF(
+            'SELECT title, description FROM kpg_lmap_map WHERE id = %s',
+            [
+                'integer',
+            ],
+            [
+                $map_id,
+            ]
+        );
+        $map = $db->fetchObject($sql);
+        return [
+            'title' => $map->title,
+            'description' => $map->description,
+        ];
+    }
+
+    public function getMapUpdateForm(int $map_id, string $action): Standard
+    {
+        $map = $this->getInfo($map_id);
+
+        $title = $this->factory->input()->field()->text('Title')
+            ->withRequired(true)
+            ->withValue($map['title']);
+        $description = $this->factory->input()->field()->text('Beschreibung')
+            ->withValue($map['description']);
+
+        $section = $this->factory->input()->field()->section(
+            [
+                'title' => $title,
+                'description' => $description,
+            ],
+            'Tour'
+        );
+
+        return $this->factory->input()->container()->form()->standard(
+            $action,
+            [
+                'section' => $section,
+            ],
+        );
     }
 
     public function deleteMap(int $map_id, string $mode): void
@@ -68,8 +142,7 @@ class ModeService
         $title_input = $this->dic->ui()->factory()->input()->field()->text('Titel')
             ->withRequired(true);
 
-        $description_input = $this->dic->ui()->factory()->input()->field()->textarea('Beschreibung')
-            ->withRequired(true);
+        $description_input = $this->dic->ui()->factory()->input()->field()->textarea('Beschreibung');
 
         $section = $this->dic->ui()->factory()->input()->field()->section(
             [

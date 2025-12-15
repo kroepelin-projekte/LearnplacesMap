@@ -54,25 +54,6 @@ class TourService
         ];
     }
 
-    public function getTourForm(string $action): Standard
-    {
-        $mode_radio_input = $this->factory->input()->field()->text('Tour...', '');
-
-        $section = $this->factory->input()->field()->section(
-            [
-                'mode' => $mode_radio_input,
-            ],
-            'Tour'
-        );
-
-        return $this->factory->input()->container()->form()->standard(
-            $action,
-            [
-                'section' => $section,
-            ],
-        );
-    }
-
     public function getTourTable(int $map_id): Component
     {
         $this->dic->ui()->mainTemplate()->addInlineCss('.c-table-data__positioninput label { display: none; }');

@@ -117,7 +117,7 @@ function initLearnplacesMaps() {
         vectorLayerRadius,
         vectorLayerPoints,
       ],
-      view: new View({ center: fromLonLat([0, 0]), zoom: 2 }),
+      view: new View({ center: fromLonLat([0, 0]), zoom: 10 }),
     });
 
     // Fit items
@@ -131,6 +131,7 @@ function initLearnplacesMaps() {
     if (extent[0] === extent[2] && extent[1] === extent[3]) {
       extent = bufferExtent(extent, 500); // 500 m Puffer
     }
-    map.getView().fit(extent, { padding: [20, 20, 20, 20], maxZoom: 16, duration: 250 });
+    // Ohne Animation direkt auf die Zielausdehnung positionieren
+    map.getView().fit(extent, { padding: [20, 20, 20, 20], maxZoom: 16, duration: 0 });
   });
 }

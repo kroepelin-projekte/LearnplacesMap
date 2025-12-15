@@ -5,10 +5,10 @@ declare(strict_types=1);
 use ILIAS\UI\Factory;
 use ILIAS\UI\Renderer;
 use ILIAS\GlobalScreen\Services;
-use Kpg\Plugins\LearnplacesMap\PageEditor\Mode\ModeService;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourService;
 use Psr\Http\Message\ServerRequestInterface;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourMap;
+use Kpg\Plugins\LearnplacesMap\PageEditor\PageComponent\PageComponentService;
 
 /**
  * @ilCtrl_isCalledBy ilLearnplacesMapPluginGUI: ilPCPluggedGUI
@@ -27,7 +27,7 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
     private ServerRequestInterface $request;
     protected Factory $factory;
     protected Renderer $renderer;
-    private modeService $mode_service;
+    private PageComponentService $mode_service;
 
     public function __construct()
     {
@@ -40,7 +40,7 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
         $this->tpl = $DIC->ui()->mainTemplate();
         $this->factory = $DIC->ui()->factory();
         $this->renderer = $DIC->ui()->renderer();
-        $this->mode_service = new ModeService($DIC, $this->factory);
+        $this->mode_service = new PageComponentService($DIC, $this->factory);
     }
 
     public function executeCommand(): void
@@ -93,10 +93,10 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
         $mode = $this->getProperties()['mode'];
 
         switch ($mode) {
-            case ModeService::MODE_TOUR:
+            case PageComponentService::MODE_TOUR:
                 $this->ctrl->redirectByClass(ilLearnplacesMapTourGUI::class, ilLearnplacesMapTourGUI::TOUR_VIEW);
                 break;
-            case ModeService::MODE_COLLECTION:
+            case PageComponentService::MODE_COLLECTION:
                 $this->ctrl->redirect($this, self::COLLECTION_VIEW);
                 break;
             default:
@@ -160,14 +160,16 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
 
         global $DIC;
 
+        $DIC->ui()->mainTemplate()->addCss('Customizing/global/plugins/Services/COPage/PageComponent/LearnplacesMap/style/style.css');
+
         // tour or collection
         $id = (int) $a_properties['id'];
         $mode = $a_properties['mode'];
 
-        if ($mode === ModeService::MODE_TOUR) {
+        if ($mode === PageComponentService::MODE_TOUR) {
             $map = new TourMap($DIC, $id);
             $map_component = $map->getMap();
-            return "<div$edit_style>" . $DIC->ui()->renderer()->render($map_component) . "</div>";
+            return "<div$edit_style class='learnplaces-map'>" . $DIC->ui()->renderer()->render($map_component) . "</div>";
         }
 
         // todo mode collection

@@ -5,6 +5,7 @@ declare(strict_types=1);
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourService;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourMap;
 use ILIAS\DI\Container;
+use Kpg\Plugins\LearnplacesMap\PageEditor\PageComponent\PageComponentService;
 
 /**
  * @ilCtrl_IsCalledBy ilLearnplacesMapTourGUI: ilLearnplacesMapPluginGUI
@@ -16,6 +17,7 @@ class ilLearnplacesMapTourGUI
     public const TOUR_ADD_ITEM = 'tourAddItem';
     public const TOUR_DELETE_ITEM = 'tourDeleteItem';
     public const TOUR_SAVE_ORDER = 'tourSaveOrder';
+    public const TOUR_UPDATE = 'tourUpdate';
 
     private ilCtrlInterface $ctrl;
     private \ILIAS\UI\Factory $factory;
@@ -28,6 +30,7 @@ class ilLearnplacesMapTourGUI
     private int $map_id;
     private TourService $tour_service;
     private TourMap $map_service;
+    private PageComponentService $page_component_service;
 
     public function __construct(
         protected ilLearnplacesMapPluginGUI $parent_gui,
@@ -45,6 +48,7 @@ class ilLearnplacesMapTourGUI
         $this->map_id = (int) $this->parent_gui->getProperties()['id'];
         $this->tour_service = new TourService($DIC, $this->factory);
         $this->map_service = new TourMap($this->dic, $this->map_id);
+        $this->page_component_service = new PageComponentService($this->dic, $this->factory);
     }
 
     public function executeCommand(): void
@@ -57,6 +61,7 @@ class ilLearnplacesMapTourGUI
             case self::TOUR_ADD_ITEM:
             case self::TOUR_DELETE_ITEM:
             case self::TOUR_SAVE_ORDER:
+            case self::TOUR_UPDATE:
                 $this->$cmd();
                 break;
         }
@@ -73,7 +78,13 @@ class ilLearnplacesMapTourGUI
 
         $map = $this->map_service->getMap();
 
+        $edit_tour_form = $this->page_component_service->getMapUpdateForm(
+            $this->map_id,
+            $this->dic->ctrl()->getFormActionByClass(\ilLearnplacesMapTourGUI::class, \ilLearnplacesMapTourGUI::TOUR_UPDATE),
+        );
+
         $this->tpl->setContent($this->renderer->render([
+            $edit_tour_form,
             $map,
             $this->factory->divider()->horizontal(),
             $add_item_button['modal'],
@@ -152,6 +163,28 @@ class ilLearnplacesMapTourGUI
             $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_FAILURE, 'Es wurden keine Lernorte ausgewählt.', true);
         }
 
+        $this->ctrl->redirect($this, self::TOUR_VIEW);
+    }
+
+    private function tourUpdate(): void
+    {
+        $form = $this->page_component_service->getMapUpdateForm(
+            -1,
+            '#',
+        )->withRequest($this->request);
+        $form_data = $form->getData();
+
+        if ($form->getError()) {
+            $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_FAILURE, $form->getError(), true);
+            $this->ctrl->redirect($this, self::TOUR_VIEW);
+        }
+
+        $title = $form_data['section']['title'];
+        $description = $form_data['section']['description'];
+
+        $this->page_component_service->updateMap($this->map_id, $title, $description);
+
+        $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_SUCCESS, 'Erfolgreich aktualisiert', true);
         $this->ctrl->redirect($this, self::TOUR_VIEW);
     }
 }
