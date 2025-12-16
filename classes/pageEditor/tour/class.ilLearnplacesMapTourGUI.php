@@ -13,7 +13,6 @@ use Kpg\Plugins\LearnplacesMap\PageEditor\PageComponent\PageComponentService;
 class ilLearnplacesMapTourGUI
 {
     public const TOUR_VIEW = 'tourView';
-    public const TOUR_CREATE = 'tourCreate';
     public const TOUR_ADD_ITEM = 'tourAddItem';
     public const TOUR_DELETE_ITEM = 'tourDeleteItem';
     public const TOUR_SAVE_ORDER = 'tourSaveOrder';
@@ -57,7 +56,6 @@ class ilLearnplacesMapTourGUI
 
         switch ($cmd) {
             case self::TOUR_VIEW:
-            case self::TOUR_CREATE:
             case self::TOUR_ADD_ITEM:
             case self::TOUR_DELETE_ITEM:
             case self::TOUR_SAVE_ORDER:
@@ -92,28 +90,6 @@ class ilLearnplacesMapTourGUI
             $this->factory->divider()->horizontal(),
             $table,
         ]));
-    }
-
-    /**
-     * @throws ilCtrlException
-     */
-    private function tourCreate(): void
-    {
-        $form = $this->tour_service->getTourForm(
-            '#',
-        )->withRequest($this->request);
-
-        $form->getData();
-
-        if ($form->getError()) {
-            $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_FAILURE, $form->getError(), true);
-            $this->ctrl->redirect($this, self::TOUR_VIEW);
-        }
-
-        $this->parent_gui->updateElement([
-            'mode' => 'tour',
-        ]);
-        $this->parent_gui->returnToParent();
     }
 
     private function tourSaveOrder(): void

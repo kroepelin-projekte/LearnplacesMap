@@ -17,10 +17,14 @@ use KPG\Learnplaces\persistence\dto\Configuration;
 
 class TourMap
 {
+    private LearnplaceRepository $learnplace_service;
+
     public function __construct(
         protected Container $dic,
         protected int $map_id,
     ) {
+        /** @var LearnplaceRepository $learnplace_service  */
+        $this->learnplace_service = PluginContainer::resolve(LearnplaceRepository::class);
     }
 
     public function getMap(): Legacy
@@ -34,11 +38,23 @@ class TourMap
             /** @var Location $location */
             $location = $learnplace->getLocation();
 
+            /** @var Configuration $configuration */
+            $configuration = $learnplace->getConfiguration();
+
+            if (!$configuration->isOnline()) {
+                continue;
+            }
+
+            // Get visited status of current user
+            $tour_service = new TourService($this->dic, $this->dic->ui()->factory());
+            $is_visited = $tour_service->isVidited($this->dic->user()->getId(), $learnplace->getId());
+
             $learnplaces_list[] = [
                 'title' => ilObject::_lookupTitle($learnplace->getObjectId()),
                 'latitude' => $location->getLatitude(),
                 'longitude' => $location->getLongitude(),
                 'radius' => $location->getRadius(),
+                'visited' => $is_visited ? 'true' : 'false',
             ];
         }
 
@@ -69,18 +85,7 @@ class TourMap
         );
 
         while ($row = $db->fetchAssoc($sql)) {
-            yield $this->getLearnplaceObj((int) $row['learnplace_ref_id']);
+            yield $this->learnplace_service->findByObjectId(ilObject::_lookupObjectId((int) $row['learnplace_ref_id']));
         }
-    }
-
-    private function getLearnplaceObj(int $learnplace_ref_id): Learnplace
-    {
-        if (!\ilObjectPlugin::getPluginObjectByType('xsrl')->isActive()) {
-            throw new ilException('Learnplaces plugin is not active.');
-        }
-
-        /** @var LearnplaceRepository $learnplace_service  */
-        $learnplace_service = PluginContainer::resolve(LearnplaceRepository::class);
-        return $learnplace_service->findByObjectId(ilObject::_lookupObjectId($learnplace_ref_id));
     }
 }

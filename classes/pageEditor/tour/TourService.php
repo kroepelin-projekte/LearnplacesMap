@@ -217,4 +217,22 @@ class TourService
             ]
         );
     }
+
+    public function isVidited(int $user_id, int $learnplace_obj_id): bool
+    {
+        $db = $this->dic->database();
+        $sql = $db->queryF(
+            "SELECT COUNT(*) AS visited FROM xsrl_visit_journal WHERE fk_learnplace_id = %s AND user_id = %s",
+            [
+                'integer',
+                'integer',
+            ],
+            [
+                $learnplace_obj_id,
+                $user_id,
+            ]
+        );
+
+        return (bool) $db->fetchObject($sql)->visited;
+    }
 }

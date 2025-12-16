@@ -47,26 +47,49 @@ function initLearnplacesMaps() {
     const pointSource = new VectorSource();
     const radiusSource = new VectorSource();
 
-    // Nummern-Style: Marker + Label
-    const markerStyleCache = new Map(); // key: nummer -> Style
-    const getMarkerStyle = (num) => {
-      if (markerStyleCache.has(num)) return markerStyleCache.get(num);
-      const style = new Style({
+    const markerStyleCache = new Map();
+    const getMarkerStyle = (num, visited) => {
+      const key = `${num}-${visited ? 'v' : 'nv'}`;
+      if (markerStyleCache.has(key)) return markerStyleCache.get(key);
+
+      // Farben: unbesucht = blau, besucht = grün
+      const fillColor = /*visited ? '#2e7d32' : */'#34499a';
+      const strokeColor = fillColor;
+
+      const baseStyle = new Style({
         image: new CircleStyle({
           radius: 20,
-          fill: new Fill({ color: '#34499a' }),
-          stroke: new Stroke({ color: '#34499a', width: 2 }),
+          fill: new Fill({ color: fillColor }),
+          stroke: new Stroke({ color: strokeColor, width: 2 }),
         }),
         text: new Text({
           text: String(num),
           font: 'bold 16px system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif',
           fill: new Fill({ color: '#ffffff' }),
-          stroke: new Stroke({ color: '#34499a', width: 0 }),
+          stroke: new Stroke({ color: strokeColor, width: 0 }),
           offsetY: 0,
         }),
       });
-      markerStyleCache.set(num, style);
-      return style;
+
+      // Zusatz‑Style mit Häkchen, nur wenn besucht
+      const styles = [baseStyle];
+      if (visited) {
+        styles.push(
+          new Style({
+            text: new Text({
+              text: '✓',
+              font: 'bold 40px system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif',
+              fill: new Fill({ color: '#2e7d32' }),
+              stroke: new Stroke({ color: strokeColor, width: 0 }),
+              offsetY: -35,
+              offsetX: 0,
+            }),
+          })
+        );
+      }
+
+      markerStyleCache.set(key, styles);
+      return styles;
     };
 
     // Radius-Style: halbtransparenter Kreis
@@ -75,7 +98,6 @@ function initLearnplacesMaps() {
       stroke: new Stroke({ color: '#34499a', width: 3 }),
     });
 
-    // Features anlegen (Reihenfolge = Nummerierung)
     items.forEach((it, idx) => {
       if (typeof it.longitude !== 'number' || typeof it.latitude !== 'number') return;
       const lon = it.longitude;
@@ -83,15 +105,18 @@ function initLearnplacesMaps() {
       const center3857 = fromLonLat([lon, lat]);
 
       const num = idx + 1; // 1..N
+      const visited = String(it.visited).toLowerCase() === 'true';
 
-      // Punkt-Feature mit Style-Funktion für Nummern
       const pointFeature = new Feature({
         geometry: new Point(center3857),
         name: it.title || '',
         number: num,
+        visited: visited,
         raw: it,
       });
-      pointFeature.setStyle((feature) => getMarkerStyle(feature.get('number')));
+      pointFeature.setStyle((feature) =>
+        getMarkerStyle(feature.get('number'), feature.get('visited'))
+      );
       pointSource.addFeature(pointFeature);
 
       // Optionaler Radius (nur wenn > 0)
