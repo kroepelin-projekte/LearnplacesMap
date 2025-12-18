@@ -8,8 +8,7 @@ use ILIAS\UI\Component\Table\OrderingBinding;
 use ILIAS\UI\Component\Table\OrderingRowBuilder;
 use ilObject;
 
-
-class tourTableDataRetrieval implements OrderingBinding
+class TableDataRetrieval implements OrderingBinding
 {
     public function __construct(
         protected int $map_id,

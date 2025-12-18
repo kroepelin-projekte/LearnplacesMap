@@ -25,6 +25,11 @@ if (!$db->tableExists($map_table_name)) {
             'length' => '500',
             'notnull' => true,
         ],
+        'context_ref_id' => [
+            'type' => 'integer',
+            'length' => '4',
+            'notnull' => true,
+        ],
     ]);
 
     if (!$db->sequenceExists($map_table_name)) {
@@ -54,6 +59,46 @@ if (!$db->tableExists($tour_table_name)) {
             'type' => 'integer',
             'length' => '4',
             'notnull' => true,
+        ],
+    ]);
+
+    if (!$db->sequenceExists($tour_table_name)) {
+        $db->createSequence($tour_table_name);
+    }
+}
+
+$tour_table_name = 'kpg_lmap_collection';
+if (!$db->tableExists($tour_table_name)) {
+    $db->createTable($tour_table_name, [
+        'id' => [
+            'type' => 'integer',
+            'length' => '4',
+            'notnull' => true,
+        ],
+        'map_id' => [
+            'type' => 'integer',
+            'length' => '4',
+            'notnull' => true,
+        ],
+        'active' => [
+            'type' => 'integer',
+            'length' => '1',
+            'notnull' => true,
+        ],
+        'tag_name' => [
+            'type' => 'text',
+            'length' => '255',
+            'notnull' => true,
+        ],
+        'color' => [
+            'type' => 'text',
+            'length' => '255',
+            'notnull' => true,
+        ],
+        'resource_id' => [
+            'type' => 'text',
+            'length' => '255',
+            'notnull' => false,
         ],
     ]);
 

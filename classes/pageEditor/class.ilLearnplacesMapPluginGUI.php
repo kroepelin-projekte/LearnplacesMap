@@ -5,10 +5,11 @@ declare(strict_types=1);
 use ILIAS\UI\Factory;
 use ILIAS\UI\Renderer;
 use ILIAS\GlobalScreen\Services;
-use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourService;
 use Psr\Http\Message\ServerRequestInterface;
-use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourMap;
+use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourMapView;
 use Kpg\Plugins\LearnplacesMap\PageEditor\PageComponent\PageComponentService;
+use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourModel;
+use Kpg\Plugins\LearnplacesMap\PageEditor\Collection\CollectionMapView;
 
 /**
  * @ilCtrl_isCalledBy ilLearnplacesMapPluginGUI: ilPCPluggedGUI
@@ -17,9 +18,6 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
 {
     private const INSERT = 'insert';
     private const CREATE = 'create';
-
-    private const COLLECTION_VIEW = 'collectionView';
-    private const COLLECTION_CREATE = 'collectionCreate';
 
     private ilCtrlInterface $ctrl;
     private ilGlobalTemplateInterface $tpl;
@@ -46,20 +44,20 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
     public function executeCommand(): void
     {
         $this->hideToolMenu();
+        $this->tpl->setTitle('Lernort Karte'); // todo lang
 
         $cmd = $this->ctrl->getCmd();
         $next_class = $this->ctrl->getNextClass();
 
         switch ($next_class) {
             case strtolower(ilLearnplacesMapTourGUI::class):
+            case strtolower(ilLearnplacesMapCollectionGUI::class):
                 $this->ctrl->forwardCommand(new $next_class($this));
                 break;
             default:
                 switch ($cmd) {
                     case self::INSERT:
                     case self::CREATE:
-                    case self::COLLECTION_VIEW:
-                    case self::COLLECTION_CREATE:
                         $this->$cmd();
                         break;
                 }
@@ -97,7 +95,7 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
                 $this->ctrl->redirectByClass(ilLearnplacesMapTourGUI::class, ilLearnplacesMapTourGUI::TOUR_VIEW);
                 break;
             case PageComponentService::MODE_COLLECTION:
-                $this->ctrl->redirect($this, self::COLLECTION_VIEW);
+                $this->ctrl->redirectByClass(ilLearnplacesMapCollectionGUI::class, ilLearnplacesMapCollectionGUI::COLLECTION_VIEW);
                 break;
             default:
                 throw new ilException('invalid_mode');
@@ -143,6 +141,8 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
 
     public function getElementHTML(string $a_mode, array $a_properties, string $plugin_version): string
     {
+        global $DIC;
+
         $learnplaces_plugin_is_active = \ilObjectPlugin::getPluginObjectByType('xsrl')->isActive();
 
         $edit_style = '';
@@ -155,10 +155,8 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
         }
 
         if (!$learnplaces_plugin_is_active) {
-            return " ";
+            return ' ';
         }
-
-        global $DIC;
 
         $DIC->ui()->mainTemplate()->addCss('Customizing/global/plugins/Services/COPage/PageComponent/LearnplacesMap/style/style.css');
 
@@ -167,13 +165,25 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
         $mode = $a_properties['mode'];
 
         if ($mode === PageComponentService::MODE_TOUR) {
-            $map = new TourMap($DIC, $id);
+            $map = new TourMapView($DIC, $id);
+
+            $tour_model = new TourModel($DIC, $this->factory);
+            if (!$tour_model->hasItems($id)) {
+                if ($a_mode === "edit") {
+                    return 'LearnplacesMap - Tour: No Items';
+                } else {
+                    return ' ';
+                }
+            }
+
+            $map_component = $map->getMap();
+            return "<div$edit_style class='learnplaces-map'>" . $DIC->ui()->renderer()->render($map_component) . "</div>";
+        } elseif ($mode === PageComponentService::MODE_COLLECTION) {
+            $map = new CollectionMapView($DIC, $id);
             $map_component = $map->getMap();
             return "<div$edit_style class='learnplaces-map'>" . $DIC->ui()->renderer()->render($map_component) . "</div>";
         }
 
-        // todo mode collection
-
-        return "Map ID: $id, Mode: $mode";
+        throw new ilException('invalid_mode');
     }
 }

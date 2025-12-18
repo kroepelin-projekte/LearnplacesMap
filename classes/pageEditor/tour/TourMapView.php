@@ -15,7 +15,7 @@ use KPG\Learnplaces\persistence\repository\LearnplaceRepositoryImpl;
 use KPG\Learnplaces\persistence\dto\Location;
 use KPG\Learnplaces\persistence\dto\Configuration;
 
-class TourMap
+class TourMapView
 {
     private LearnplaceRepository $learnplace_service;
 
@@ -34,7 +34,9 @@ class TourMap
 
         $learnplaces_list = [];
         $learnplaces = $this->getLearnplacesOfTour();
-        foreach ($learnplaces as $learnplace) {
+        foreach ($learnplaces as $learnplace_item) {
+            $learnplace_ref_id = $learnplace_item['ref_id'];
+            $learnplace = $learnplace_item['object'];
             /** @var Location $location */
             $location = $learnplace->getLocation();
 
@@ -46,8 +48,8 @@ class TourMap
             }
 
             // Get visited status of current user
-            $tour_service = new TourService($this->dic, $this->dic->ui()->factory());
-            $is_visited = $tour_service->isVidited($this->dic->user()->getId(), $learnplace->getId());
+            $tour_model = new TourModel($this->dic, $this->dic->ui()->factory());
+            $is_visited = $tour_model->isVidited($this->dic->user()->getId(), $learnplace->getId());
 
             $learnplaces_list[] = [
                 'title' => ilObject::_lookupTitle($learnplace->getObjectId()),
@@ -55,6 +57,7 @@ class TourMap
                 'longitude' => $location->getLongitude(),
                 'radius' => $location->getRadius(),
                 'visited' => $is_visited ? 'true' : 'false',
+                'url' => ILIAS_HTTP_PATH . '/go/xsrl/' . $learnplace_ref_id,
             ];
         }
 
@@ -85,7 +88,16 @@ class TourMap
         );
 
         while ($row = $db->fetchAssoc($sql)) {
-            yield $this->learnplace_service->findByObjectId(ilObject::_lookupObjectId((int) $row['learnplace_ref_id']));
+            $obj_id = ilObject::_lookupObjectId((int) $row['learnplace_ref_id']);
+
+            if (!ilObject::_exists($obj_id)) {
+                continue;
+            }
+
+            yield [
+                'ref_id' => (int) $row['learnplace_ref_id'],
+                'object' => $this->learnplace_service->findByObjectId($obj_id),
+            ];
         }
     }
 }

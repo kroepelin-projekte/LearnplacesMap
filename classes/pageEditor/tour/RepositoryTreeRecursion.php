@@ -8,8 +8,7 @@ use ILIAS\UI\Component\Tree\TreeRecursion;
 use ILIAS\UI\Component\Tree\Node;
 use ILIAS\DI\Container;
 
-
-class TourTreeRecursion implements TreeRecursion
+class RepositoryTreeRecursion implements TreeRecursion
 {
     public function __construct(
         protected Container $dic,

@@ -9,16 +9,16 @@ import Point from 'ol/geom/Point.js';
 import CircleGeom from 'ol/geom/Circle.js';
 import {fromLonLat} from 'ol/proj.js';
 import Style from 'ol/style/Style.js';
-import Icon from 'ol/style/Icon.js'; // optional, falls du statt Kreisen ein Icon willst
 import CircleStyle from 'ol/style/Circle.js';
 import Fill from 'ol/style/Fill.js';
 import Stroke from 'ol/style/Stroke.js';
 import Text from 'ol/style/Text.js';
 import {buffer as bufferExtent, isEmpty as isEmptyExtent, extend as extendExtent} from 'ol/extent.js';
 
-document.addEventListener('DOMContentLoaded', initLearnplacesMaps);
+document.addEventListener('DOMContentLoaded', initLearnplacesTourMaps);
+document.addEventListener('DOMContentLoaded', initLearnplacesCollectionMaps);
 
-function initLearnplacesMaps() {
+function initLearnplacesTourMaps() {
   const scripts = document.querySelectorAll(
     'script[type="application/json"][data-learnplaces-tour^="learnplaces-tour-"]'
   );
@@ -106,6 +106,7 @@ function initLearnplacesMaps() {
 
       const num = idx + 1; // 1..N
       const visited = String(it.visited).toLowerCase() === 'true';
+      const url = it.url;
 
       const pointFeature = new Feature({
         geometry: new Point(center3857),
@@ -158,5 +159,168 @@ function initLearnplacesMaps() {
     }
     // Ohne Animation direkt auf die Zielausdehnung positionieren
     map.getView().fit(extent, { padding: [20, 20, 20, 20], maxZoom: 16, duration: 0 });
+
+    // Click and navigate to learnplace (pro Map-Instanz registrieren)
+    map.on('click', (event) => {
+      const feature = map.forEachFeatureAtPixel(event.pixel, (f) => f);
+
+      if (feature) {
+        const rawData = feature.get('raw');
+
+        if (rawData && rawData.url) {
+          window.open(rawData.url, '_blank');
+        }
+      }
+    });
+  });
+}
+
+function initLearnplacesCollectionMaps() {
+  const scripts = document.querySelectorAll(
+    'script[type="application/json"][data-learnplaces-collection^="learnplaces-collection-"]'
+  );
+
+  scripts.forEach((script) => {
+    const tourAttr = script.dataset.learnplacesCollection || '';
+    const mapId = tourAttr.replace(/^learnplaces-collection-/, '');
+    const containerId = `map-${mapId}`;
+    const containerEl = document.getElementById(containerId);
+    if (!containerEl) {
+      console.warn(`Container #${containerId} nicht gefunden – Map wird übersprungen.`);
+      return;
+    }
+
+    let data;
+    try {
+      data = JSON.parse(script.textContent || '{}');
+    } catch (e) {
+      console.error('Ungültiges JSON in', script, e);
+      return;
+    }
+
+    const items = Array.isArray(data.learnplaces) ? data.learnplaces : [];
+
+    // Quellen: Punkte (Marker) und Radien (Kreise)
+    const pointSource = new VectorSource();
+    const radiusSource = new VectorSource();
+
+    const markerStyleCache = new Map();
+    const getMarkerStyle = (num, visited, color) => {
+      console.log(color);
+      const key = `${num}-${visited ? 'v' : 'nv'}-${color}`;
+      if (markerStyleCache.has(key)) return markerStyleCache.get(key);
+
+      // Farben: unbesucht = blau, besucht = grün
+      const fillColor = color || '#34499a';
+      const strokeColor = fillColor;
+
+      const baseStyle = new Style({
+        image: new CircleStyle({
+          radius: 20,
+          fill: new Fill({ color: fillColor }),
+          stroke: new Stroke({ color: strokeColor, width: 2 }),
+        }),
+      });
+
+      // Zusatz‑Style mit Häkchen, nur wenn besucht
+      const styles = [baseStyle];
+      if (visited) {
+        styles.push(
+          new Style({
+            text: new Text({
+              text: '✓',
+              font: 'bold 40px system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif',
+              fill: new Fill({ color: '#2e7d32' }),
+              stroke: new Stroke({ color: strokeColor, width: 0 }),
+              offsetY: -35,
+              offsetX: 0,
+            }),
+          })
+        );
+      }
+
+      markerStyleCache.set(key, styles);
+      return styles;
+    };
+
+    // Radius-Style: halbtransparenter Kreis
+    const radiusStyle = new Style({
+      fill: new Fill({ color: 'rgba(52,73,154,0.4)' }),
+      stroke: new Stroke({ color: '#34499a', width: 3 }),
+    });
+
+    items.forEach((it, idx) => {
+      if (typeof it.longitude !== 'number' || typeof it.latitude !== 'number') return;
+      const lon = it.longitude;
+      const lat = it.latitude;
+      const center3857 = fromLonLat([lon, lat]);
+
+      const visited = String(it.visited).toLowerCase() === 'true';
+      const url = it.url;
+      const color = it.color;
+
+      const pointFeature = new Feature({
+        geometry: new Point(center3857),
+        name: it.title || '',
+        visited: visited,
+        color: color,
+        raw: it,
+      });
+      pointFeature.setStyle((feature) =>
+        getMarkerStyle(feature.get('number'), feature.get('visited'), feature.get('color'))
+      );
+      pointSource.addFeature(pointFeature);
+
+      // Optionaler Radius (nur wenn > 0)
+      const radius = Number(it.radius);
+      if (Number.isFinite(radius) && radius > 0) {
+        const circleFeature = new Feature({
+          geometry: new CircleGeom(center3857, radius), // Radius in Metern (EPSG:3857)
+          raw: it,
+        });
+        circleFeature.setStyle(radiusStyle);
+        radiusSource.addFeature(circleFeature);
+      }
+    });
+
+    const vectorLayerPoints = new VectorLayer({ source: pointSource });
+    const vectorLayerRadius = new VectorLayer({ source: radiusSource });
+
+    const map = new OLMap({
+      target: containerEl,
+      layers: [
+        new TileLayer({ source: new XYZ({ url: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' }) }),
+        vectorLayerRadius,
+        vectorLayerPoints,
+      ],
+      view: new View({ center: fromLonLat([0, 0]), zoom: 10 }),
+    });
+
+    // Fit items
+    let extent = pointSource.getExtent();
+    if (!isEmptyExtent(radiusSource.getExtent())) {
+      extent = extendExtent(extent, radiusSource.getExtent());
+    }
+    if (isEmptyExtent(extent)) {
+      return;
+    }
+    if (extent[0] === extent[2] && extent[1] === extent[3]) {
+      extent = bufferExtent(extent, 500); // 500 m Puffer
+    }
+    // Ohne Animation direkt auf die Zielausdehnung positionieren
+    map.getView().fit(extent, { padding: [20, 20, 20, 20], maxZoom: 16, duration: 0 });
+
+    // Click and navigate to learnplace (pro Map-Instanz registrieren)
+    map.on('click', (event) => {
+      const feature = map.forEachFeatureAtPixel(event.pixel, (f) => f);
+
+      if (feature) {
+        const rawData = feature.get('raw');
+
+        if (rawData && rawData.url) {
+          window.open(rawData.url, '_blank');
+        }
+      }
+    });
   });
 }

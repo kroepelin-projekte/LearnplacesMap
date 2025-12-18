@@ -9,7 +9,7 @@ use ILIAS\UI\Factory;
 use ILIAS\DI\Container;
 use ilLearnplacesMapPluginGUI;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourService;
-
+use ilObject;
 
 class PageComponentService
 {
@@ -30,6 +30,7 @@ class PageComponentService
             'mode' => ['text', $mode],
             'title' => ['text', $title],
             'description' => ['text', $description],
+            'context_ref_id' => ['integer', \ilLearnplacesMapPlugin::getContext()],
         ]);
         return $id;
     }
@@ -56,18 +57,19 @@ class PageComponentService
     /**
      * @return array{title: string, description: string}
      */
-    private function getInfo(int $map_id): array
+    public function getInfo(int $map_id): array
     {
         if ($map_id < 0) {
             return [
                 'title' => '',
                 'description' => '',
+                'context_ref_id' => null,
             ];
         }
 
         $db = $this->dic->database();
         $sql = $db->queryF(
-            'SELECT title, description FROM kpg_lmap_map WHERE id = %s',
+            'SELECT title, description, context_ref_id FROM kpg_lmap_map WHERE id = %s',
             [
                 'integer',
             ],
@@ -79,7 +81,26 @@ class PageComponentService
         return [
             'title' => $map->title,
             'description' => $map->description,
+            'context_ref_id' => (int) $map->context_ref_id,
         ];
+    }
+
+    public function updateCourseRefId(int $map_id, int $course_ref_id): void
+    {
+        $this->dic->database()->manipulateF(
+            <<<SQL
+            UPDATE kpg_lmap_map SET course_ref_id = %s WHERE id = %s
+            SQL,
+            [
+                'integer',
+                'integer',
+            ],
+            [
+                $course_ref_id,
+                $map_id,
+            ]
+        );
+
     }
 
     public function getMapUpdateForm(int $map_id, string $action): Standard

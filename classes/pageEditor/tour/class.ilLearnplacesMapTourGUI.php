@@ -2,7 +2,8 @@
 
 declare(strict_types=1);
 
-use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourService;
+use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourView;
+use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourModel;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourMap;
 use ILIAS\DI\Container;
 use Kpg\Plugins\LearnplacesMap\PageEditor\PageComponent\PageComponentService;
@@ -16,7 +17,8 @@ class ilLearnplacesMapTourGUI
     public const TOUR_ADD_ITEM = 'tourAddItem';
     public const TOUR_DELETE_ITEM = 'tourDeleteItem';
     public const TOUR_SAVE_ORDER = 'tourSaveOrder';
-    public const TOUR_UPDATE = 'tourUpdate';
+    public const SHOW_MAP_SETTINGS = 'showMapSettings';
+    public const SAVE_MAP_SETTINGS = 'saveMapSettings';
 
     private ilCtrlInterface $ctrl;
     private \ILIAS\UI\Factory $factory;
@@ -27,7 +29,8 @@ class ilLearnplacesMapTourGUI
     private \ILIAS\Refinery\Factory $refinery;
     private Container $dic;
     private int $map_id;
-    private TourService $tour_service;
+    private TourView $tour_view;
+    private TourModel $tour_model;
     private TourMap $map_service;
     private PageComponentService $page_component_service;
 
@@ -45,13 +48,16 @@ class ilLearnplacesMapTourGUI
         $this->factory = $DIC->ui()->factory();
         $this->renderer = $DIC->ui()->renderer();
         $this->map_id = (int) $this->parent_gui->getProperties()['id'];
-        $this->tour_service = new TourService($DIC, $this->factory);
+        $this->tour_view = new TourView($DIC, $this->factory);
+        $this->tour_model = new TourModel($DIC, $this->factory);
         $this->map_service = new TourMap($this->dic, $this->map_id);
         $this->page_component_service = new PageComponentService($this->dic, $this->factory);
     }
 
     public function executeCommand(): void
     {
+        $this->initTabs();
+
         $cmd = $this->ctrl->getCmd();
 
         switch ($cmd) {
@@ -59,46 +65,51 @@ class ilLearnplacesMapTourGUI
             case self::TOUR_ADD_ITEM:
             case self::TOUR_DELETE_ITEM:
             case self::TOUR_SAVE_ORDER:
-            case self::TOUR_UPDATE:
+            case self::SHOW_MAP_SETTINGS:
+            case self::SAVE_MAP_SETTINGS:
                 $this->$cmd();
                 break;
         }
     }
 
-    /**
-     * @throws ilCtrlException
-     */
-    private function tourView(): void
+    private function initTabs(): void
     {
-        $add_item_button = $this->tour_service->addItemButton();
-
-        $table = $this->tour_service->getTourTable((int) $this->parent_gui->getProperties()['id']);
-
-        $map = $this->map_service->getMap();
-
-        $edit_tour_form = $this->page_component_service->getMapUpdateForm(
-            $this->map_id,
-            $this->dic->ctrl()->getFormActionByClass(\ilLearnplacesMapTourGUI::class, \ilLearnplacesMapTourGUI::TOUR_UPDATE),
+        $this->dic->tabs()->addTab(
+            self::TOUR_VIEW,
+            $this->dic->language()->txt('content'),
+            $this->ctrl->getLinkTarget($this, self::TOUR_VIEW),
         );
 
+        $this->dic->tabs()->addTab(
+            self::SHOW_MAP_SETTINGS,
+            $this->dic->language()->txt('settings'),
+            $this->ctrl->getLinkTarget($this, self::SHOW_MAP_SETTINGS),
+        );
+    }
+
+    private function tourView(): void
+    {
+        $this->dic->tabs()->activateTab(self::TOUR_VIEW);
+
+        $modal_and_button = $this->tour_view->addItemModal();
+
         $this->tpl->setContent($this->renderer->render([
-            $edit_tour_form,
-            $map,
+            $this->map_service->getMap(),
             $this->factory->divider()->horizontal(),
-            $add_item_button['modal'],
-            $add_item_button['button'],
+            $modal_and_button['modal'],
+            $modal_and_button['button'],
             $this->factory->divider()->horizontal(),
-            $table,
+            $this->tour_view->getTable($this->map_id),
         ]));
     }
 
     private function tourSaveOrder(): void
     {
-        $table = $this->tour_service->getTourTable((int) $this->parent_gui->getProperties()['id']);
+        $table = $this->tour_view->getTable($this->map_id);
         $order = $table->withRequest($this->request)->getData();
 
         foreach ($order as $new_position => $id) {
-            $this->tour_service->updatePosition((int) $id, (int) $new_position);
+            $this->tour_model->updatePosition((int) $id, (int) $new_position);
         }
 
         $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_SUCCESS, 'Erfolgreich sortiert', true);
@@ -108,7 +119,7 @@ class ilLearnplacesMapTourGUI
     private function tourAddItem(): void
     {
         global $DIC;
-        $modal = $this->tour_service->addItemButton()['modal'];
+        $modal = $this->tour_view->addItemModal()['modal'];
 
         $form_data = $modal->getForm()->withRequest($this->request)->getData();
         $ref_id = ((int) $form_data['ref_id']) ?? null;
@@ -117,7 +128,7 @@ class ilLearnplacesMapTourGUI
             $this->ctrl->redirect($this, self::TOUR_VIEW);
         }
 
-        $this->tour_service->addItem($this->map_id, $ref_id);
+        $this->tour_model->addItem($this->map_id, $ref_id);
 
         $this->ctrl->redirect($this, self::TOUR_VIEW);
     }
@@ -129,10 +140,10 @@ class ilLearnplacesMapTourGUI
             $ids = $query->retrieve('delete_ids', $this->refinery->kindlyTo()->listOf($this->refinery->kindlyTo()->string()));
 
             if (($ids[0] ?? null) === 'ALL_OBJECTS') {
-                $this->tour_service->deleteAllItems($this->map_id);
+                $this->tour_model->deleteAllItems($this->map_id);
             } else {
                 $ids = array_map('intval', $ids);
-                $this->tour_service->deleteItems($this->map_id, $ids);
+                $this->tour_model->deleteItems($this->map_id, $ids);
             }
             $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_SUCCESS, 'Erfolgreich gelöscht', true);
         } else {
@@ -142,7 +153,21 @@ class ilLearnplacesMapTourGUI
         $this->ctrl->redirect($this, self::TOUR_VIEW);
     }
 
-    private function tourUpdate(): void
+    private function showMapSettings(): void
+    {
+        $this->dic->tabs()->activateTab(self::SHOW_MAP_SETTINGS);
+
+        $edit_tour_form = $this->page_component_service->getMapUpdateForm(
+            $this->map_id,
+            $this->dic->ctrl()->getFormActionByClass(\ilLearnplacesMapTourGUI::class, \ilLearnplacesMapTourGUI::SAVE_MAP_SETTINGS),
+        );
+
+        $this->tpl->setContent($this->renderer->render([
+            $edit_tour_form,
+        ]));
+    }
+
+    private function saveMapSettings(): void
     {
         $form = $this->page_component_service->getMapUpdateForm(
             -1,
@@ -152,7 +177,7 @@ class ilLearnplacesMapTourGUI
 
         if ($form->getError()) {
             $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_FAILURE, $form->getError(), true);
-            $this->ctrl->redirect($this, self::TOUR_VIEW);
+            $this->ctrl->redirect($this, self::SHOW_MAP_SETTINGS);
         }
 
         $title = $form_data['section']['title'];
@@ -161,6 +186,6 @@ class ilLearnplacesMapTourGUI
         $this->page_component_service->updateMap($this->map_id, $title, $description);
 
         $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_SUCCESS, 'Erfolgreich aktualisiert', true);
-        $this->ctrl->redirect($this, self::TOUR_VIEW);
+        $this->ctrl->redirect($this, self::SHOW_MAP_SETTINGS);
     }
 }
