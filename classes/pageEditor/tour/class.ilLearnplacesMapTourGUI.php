@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourView;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourModel;
-use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourMap;
 use ILIAS\DI\Container;
 use Kpg\Plugins\LearnplacesMap\PageEditor\PageComponent\PageComponentService;
+use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourMapView;
 
 /**
  * @ilCtrl_IsCalledBy ilLearnplacesMapTourGUI: ilLearnplacesMapPluginGUI
@@ -31,8 +31,8 @@ class ilLearnplacesMapTourGUI
     private int $map_id;
     private TourView $tour_view;
     private TourModel $tour_model;
-    private TourMap $map_service;
     private PageComponentService $page_component_service;
+    private TourMapView $map_view;
 
     public function __construct(
         protected ilLearnplacesMapPluginGUI $parent_gui,
@@ -49,8 +49,8 @@ class ilLearnplacesMapTourGUI
         $this->renderer = $DIC->ui()->renderer();
         $this->map_id = (int) $this->parent_gui->getProperties()['id'];
         $this->tour_view = new TourView($DIC, $this->factory);
-        $this->tour_model = new TourModel($DIC, $this->factory);
-        $this->map_service = new TourMap($this->dic, $this->map_id);
+        $this->tour_model = new TourModel($DIC);
+        $this->map_view = new TourMapView($DIC, $this->map_id);
         $this->page_component_service = new PageComponentService($this->dic, $this->factory);
     }
 
@@ -94,7 +94,7 @@ class ilLearnplacesMapTourGUI
         $modal_and_button = $this->tour_view->addItemModal();
 
         $this->tpl->setContent($this->renderer->render([
-            $this->map_service->getMap(),
+            $this->map_view->getMap(),
             $this->factory->divider()->horizontal(),
             $modal_and_button['modal'],
             $modal_and_button['button'],

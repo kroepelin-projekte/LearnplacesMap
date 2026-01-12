@@ -10,6 +10,7 @@ use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourMapView;
 use Kpg\Plugins\LearnplacesMap\PageEditor\PageComponent\PageComponentService;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourModel;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Collection\CollectionMapView;
+use Kpg\Plugins\LearnplacesMap\PageEditor\Collection\CollectionModel;
 
 /**
  * @ilCtrl_isCalledBy ilLearnplacesMapPluginGUI: ilPCPluggedGUI
@@ -165,25 +166,43 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
         $mode = $a_properties['mode'];
 
         if ($mode === PageComponentService::MODE_TOUR) {
-            $map = new TourMapView($DIC, $id);
-
-            $tour_model = new TourModel($DIC, $this->factory);
+            $tour_model = new TourModel($DIC);
             if (!$tour_model->hasItems($id)) {
                 if ($a_mode === "edit") {
-                    return 'LearnplacesMap - Tour: No Items';
+                    return $this->getPlaceholderHtml();
+                } else {
+                    return ' ';
+                }
+            }
+            $map = new TourMapView($DIC, $id);
+            $map_component = $map->getMap();
+            return "<div$edit_style class='learnplaces-map'>" . $DIC->ui()->renderer()->render($map_component) . "</div>";
+        } elseif ($mode === PageComponentService::MODE_COLLECTION) {
+            $collection_model = new CollectionModel($DIC);
+            if (!$collection_model->hasItems($id)) {
+                if ($a_mode === "edit") {
+                    return $this->getPlaceholderHtml();
                 } else {
                     return ' ';
                 }
             }
 
-            $map_component = $map->getMap();
-            return "<div$edit_style class='learnplaces-map'>" . $DIC->ui()->renderer()->render($map_component) . "</div>";
-        } elseif ($mode === PageComponentService::MODE_COLLECTION) {
             $map = new CollectionMapView($DIC, $id);
             $map_component = $map->getMap();
             return "<div$edit_style class='learnplaces-map'>" . $DIC->ui()->renderer()->render($map_component) . "</div>";
         }
 
         throw new ilException('invalid_mode');
+    }
+
+    private function getPlaceholderHtml(): string
+    {
+        return <<<HTML
+                <div class="learnplaces-map-placeholder">
+                    <div class="placeholder-text">
+                        Bitte öffnen, um die Lernort-Karte zu bearbeiten.
+                    </div>
+                </div>
+                HTML;
     }
 }

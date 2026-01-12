@@ -3,7 +3,8 @@
 declare(strict_types=1);
 
 use Kpg\Plugins\LearnplacesMap\PageEditor\PageComponent\PageComponentService;
-use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourService;
+use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourModel;
+use Kpg\Plugins\LearnplacesMap\PageEditor\Collection\CollectionModel;
 
 class ilLearnplacesMapPlugin extends ilPageComponentPlugin
 {
@@ -63,7 +64,6 @@ class ilLearnplacesMapPlugin extends ilPageComponentPlugin
         $map_id = (int) $a_properties['id'];
         $mode = $a_properties['mode'];
         $page_component_service = new PageComponentService($DIC, $DIC->ui()->factory());
-        $tour_service = new TourService($DIC, $DIC->ui()->factory());
 
         $new_context_ref_id = self::getContext();
         if ($new_context_ref_id === false) {
@@ -74,9 +74,11 @@ class ilLearnplacesMapPlugin extends ilPageComponentPlugin
 
         // Context has changed, delete all tours associated with this map
         if ($context_ref_id !== $new_context_ref_id) {
-            $tour_service->deleteAllItems($map_id);
+            $tour_model = new TourModel($DIC);
+            $tour_model->deleteAllItems($map_id);
 
-            // todo delete for collection
+            $collection_model = new CollectionModel($DIC);
+            $collection_model->deleteAllGroups($map_id);
 
             $page_component_service->updateCourseRefId($map_id, $new_context_ref_id);
         }
@@ -91,7 +93,6 @@ class ilLearnplacesMapPlugin extends ilPageComponentPlugin
         $map_id = (int) $a_properties['id'];
         $mode = $a_properties['mode'];
         $page_component_service = new PageComponentService($DIC, $DIC->ui()->factory());
-        $tour_service = new TourService($DIC, $DIC->ui()->factory());
 
         if ($move_operation) {
 
@@ -106,9 +107,11 @@ class ilLearnplacesMapPlugin extends ilPageComponentPlugin
             if ($context_ref_id !== $new_context_ref_id) {
 
                 // Delete tour items when moving to another course
-                $tour_service->deleteAllItems($map_id);
+                $tour_model = new TourModel($DIC);
+                $tour_model->deleteAllItems($map_id);
 
-                // todo delete for collection
+                $collection_model = new CollectionModel($DIC);
+                $collection_model->deleteAllGroups($map_id);
 
                 // Update course ref_id
                 $page_component_service->updateCourseRefId($map_id, $new_context_ref_id);
@@ -118,5 +121,17 @@ class ilLearnplacesMapPlugin extends ilPageComponentPlugin
         }
 
         $page_component_service->deleteMap($map_id, $mode);
+    }
+
+    public function getTourModel(): TourModel
+    {
+        global $DIC;
+        return new TourModel($DIC);
+    }
+
+    public function getCollectionModel(): CollectionModel
+    {
+        global $DIC;
+        return new CollectionModel($DIC);
     }
 }

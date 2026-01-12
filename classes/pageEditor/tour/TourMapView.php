@@ -25,6 +25,9 @@ class TourMapView
     ) {
         /** @var LearnplaceRepository $learnplace_service  */
         $this->learnplace_service = PluginContainer::resolve(LearnplaceRepository::class);
+
+        // Cleanup deleted learnplaces from tour maps
+        (new TourModel($this->dic))->cleanupDeletedLearnplacesFromTourMaps();
     }
 
     public function getMap(): Legacy
@@ -48,7 +51,7 @@ class TourMapView
             }
 
             // Get visited status of current user
-            $tour_model = new TourModel($this->dic, $this->dic->ui()->factory());
+            $tour_model = new TourModel($this->dic);
             $is_visited = $tour_model->isVidited($this->dic->user()->getId(), $learnplace->getId());
 
             $learnplaces_list[] = [

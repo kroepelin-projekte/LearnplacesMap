@@ -43,7 +43,7 @@ class ilLearnplacesMapCollectionGUI
         $this->renderer = $DIC->ui()->renderer();
         $this->request = $DIC->http()->request();
         $this->collection_view = new CollectionView($this->dic, $this->factory);
-        $this->collection_model = new CollectionModel($this->dic, $this->factory);
+        $this->collection_model = new CollectionModel($this->dic);
         $this->map_id = (int) $this->parent_gui->getProperties()['id'];
         $this->page_component_service = new PageComponentService($this->dic, $this->factory);
     }
@@ -86,10 +86,16 @@ class ilLearnplacesMapCollectionGUI
 
         $map_view = new CollectionMapView($this->dic, $this->map_id);
 
-        $this->tpl->setContent($this->renderer->render([
-            $map_view->getMap(),
-            $this->collection_view->getTable(),
-        ]));
+        if (!$this->collection_model->hasItems($this->map_id)) {
+            $this->tpl->setContent($this->renderer->render([
+                $this->collection_view->getTable(),
+            ]));
+        } else {
+            $this->tpl->setContent($this->renderer->render([
+                $map_view->getMap(),
+                $this->collection_view->getTable(),
+            ]));
+        }
     }
 
     /**
@@ -109,25 +115,9 @@ class ilLearnplacesMapCollectionGUI
 
         $tag_name = $form_data['tag_name'];
         $active = $form_data['active'];
-        $type = $form_data['type'][0];
-        $color = '#123456';
-        $resource_id = null;
+        $color = $form_data['color_input']->asHex();
 
-        if ($type === 'color_radio') {
-            $color_input = $form_data['type'][1]['color_input'];
-            $color = $color_input->asHex();
-
-            // deletes image when switching to color
-            if ($rid = $this->dic->resourceStorage()->manage()->find($this->collection_model->getGroup($tag_name)['resource_id'] ?? '')) {
-                $this->dic->resourceStorage()->manage()->remove($rid, new ilLearnplacesMapStakeholder());
-            }
-
-        } elseif ($type === 'file_radio') {
-            $file_input = $form_data['type'][1]['file_input'];
-            $resource_id = current($file_input) ?: null;
-        }
-
-        $this->collection_model->storeGroup($this->map_id, $tag_name, $active, $color, $resource_id);
+        $this->collection_model->storeGroup($this->map_id, $tag_name, $active, $color);
 
         $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_SUCCESS, 'Erfolgreich aktualisiert', true);
         $this->ctrl->redirect($this, self::COLLECTION_VIEW);

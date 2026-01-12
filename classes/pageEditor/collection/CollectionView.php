@@ -54,7 +54,6 @@ class CollectionView
                     '',
                 )->withIsSortable(false),
                 'color' => $this->factory->table()->column()->text('Farbe')->withIsSortable(false),
-                'icon' => $this->factory->table()->column()->text('Icon')->withIsSortable(false),
             ],
             new TableDataRetrieval($this->dic),
         )
@@ -71,18 +70,11 @@ class CollectionView
             $tag_name = current($query->retrieve('collection_tag_name', $this->dic->refinery()->kindlyTo()->listOf($this->dic->refinery()->kindlyTo()->string())));
         }
 
-        $collection_model = new CollectionModel($this->dic, $this->factory);
+        $collection_model = new CollectionModel($this->dic);
         $record = $collection_model->getGroup($tag_name);
         $type = 'color_radio';
         $active = (bool) $record['active'];
         $color = $record['color'];
-
-        $resource_id = $record['resource_id'];
-        if (!is_null($resource_id)) {
-            $type = 'file_radio';
-        }
-
-        $file_value = $resource_id ? [$resource_id] : [];
 
         return $this->factory->modal()->roundtrip(
             'Edit Group',
@@ -90,20 +82,7 @@ class CollectionView
             [
                 'tag_name' => $this->factory->input()->field()->hidden()->withValue($tag_name),
                 'active' => $this->factory->input()->field()->checkbox('Aktiv')->withValue($active),
-                'type' => $this->factory->input()->field()->switchableGroup(
-                    [
-                        'color_radio' => $this->factory->input()->field()->group([
-                            'color_input' => $this->factory->input()->field()->colorPicker('')->withValue($color)
-                        ], 'Farbe LANG'),
-                        'file_radio' => $this->factory->input()->field()->group([
-                            'file_input' => $this->factory->input()->field()->file(new \ilLearnplacesMapUploadHandlerGUI(), $this->dic->language()->txt('upload'))
-                                ->withMaxFiles(1)
-                                ->withAcceptedMimeTypes([MimeType::IMAGE__SVG_XML])
-                                ->withValue($file_value)
-                        ], $this->dic->language()->txt('icon')),
-                    ],
-                    'Marker Type LANG'
-                )->withValue($type),
+                'color_input' => $this->factory->input()->field()->colorPicker('')->withValue($color)
             ],
             $this->dic->ctrl()->getFormActionByClass(\ilLearnplacesMapCollectionGUI::class, \ilLearnplacesMapCollectionGUI::COLLECTION_SAVE_GROUP, '', true),
         )->withCancelButtonLabel($this->dic->language()->txt('close'));

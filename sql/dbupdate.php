@@ -95,11 +95,6 @@ if (!$db->tableExists($tour_table_name)) {
             'length' => '255',
             'notnull' => true,
         ],
-        'resource_id' => [
-            'type' => 'text',
-            'length' => '255',
-            'notnull' => false,
-        ],
     ]);
 
     if (!$db->sequenceExists($tour_table_name)) {

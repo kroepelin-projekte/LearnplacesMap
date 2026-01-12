@@ -33,34 +33,19 @@ class TableDataRetrieval implements DataRetrieval
 
         natcasesort($tags_of_learnplaces_in_course);
 
-        $collection_model = new CollectionModel($this->dic, $this->dic->ui()->factory());
+        $collection_model = new CollectionModel($this->dic);
 
         foreach ($tags_of_learnplaces_in_course as $tag_name) {
-
             $record = $collection_model->getGroup($tag_name);
 
             $active = $record['active'] ? true : false;
             $color = $record['color'];
             $color_html = "<div style='width: 30px; height: 30px; border-radius: 50%; background-color: {$color};'></div>";
 
-            $icon_html = '';
-            $resource_id = $record['resource_id'];
-            if ($resource_id) {
-                if ($rid = $this->dic->resourceStorage()->manage()->find($resource_id)) {
-                    $stream = $this->dic->resourceStorage()->consume()->stream($rid)->getStream();
-                    $bin = $stream->read($stream->getSize());
-                    $base_64 = base64_encode($bin);
-                    $mime_type = MimeType::IMAGE__SVG_XML;
-                    $icon_html = "<img src='data:{$mime_type};base64,{$base_64}' style='width: 30px; height: 30px;'>";
-                }
-            }
-
-
             yield $row_builder->buildDataRow($tag_name, [
                 'tag_name' => $tag_name,
                 'active' => $active,
                 'color' => $color_html,
-                'icon' => $icon_html,
                 ]
             );
         }

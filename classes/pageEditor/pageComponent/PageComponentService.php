@@ -8,8 +8,8 @@ use ILIAS\UI\Component\Input\Container\Form\Standard;
 use ILIAS\UI\Factory;
 use ILIAS\DI\Container;
 use ilLearnplacesMapPluginGUI;
-use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourService;
 use ilObject;
+use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourModel;
 
 class PageComponentService
 {
@@ -107,10 +107,10 @@ class PageComponentService
     {
         $map = $this->getInfo($map_id);
 
-        $title = $this->factory->input()->field()->text('Title')
+        $title = $this->factory->input()->field()->text($this->dic->language()->txt('title'))
             ->withRequired(true)
             ->withValue($map['title']);
-        $description = $this->factory->input()->field()->text('Beschreibung')
+        $description = $this->factory->input()->field()->textarea($this->dic->language()->txt('description'))
             ->withValue($map['description']);
 
         $section = $this->factory->input()->field()->section(
@@ -131,10 +131,10 @@ class PageComponentService
 
     public function deleteMap(int $map_id, string $mode): void
     {
-        $tour_service = new TourService($this->dic, $this->factory);
+        $tour_model = new TourModel($this->dic);
 
         if ($mode === self::MODE_TOUR) {
-            $tour_service->deleteAllItems($map_id);
+            $tour_model->deleteAllItems($map_id);
 
             $this->dic->database()->manipulateF(
                 <<<SQL
