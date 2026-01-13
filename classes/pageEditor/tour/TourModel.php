@@ -202,38 +202,39 @@ class TourModel
             SELECT m.id, m.mode, m.title, m.description, m.context_ref_id, t.learnplace_ref_id, t.position
             FROM kpg_lmap_map AS m
             JOIN kpg_lmap_tour AS t ON m.id = t.map_id
-            WHERE {$in_condition}
+            WHERE {$in_condition} AND m.mode = 'tour'
             ORDER BY m.id, t.position ASC
             SQL
         );
 
-        $current_context_id = null;
+        $current_map_id = null;
         $tour_data = [];
 
         while ($row = $db->fetchAssoc($res)) {
-            if ($row['mode'] !== 'tour') {
-                continue;
-            }
-
             // Return contect if a new context is encountered
-            if ($current_context_id !== null && $current_context_id !== $row['context_ref_id']) {
-                yield $current_context_id => $tour_data;
+            if ($current_map_id !== null && $current_map_id !== $row['id']) {
+                yield $tour_data;
                 $tour_data = [];
             }
 
             $learnplace_obj_id = \ilObject::_lookupObjectId($row['learnplace_ref_id']);
-
             if (!\ilObject::_exists($learnplace_obj_id)) {
                 continue;
             }
 
-            $current_context_id = $row['context_ref_id'];
+            $current_map_id = $row['id'];
 
             // Collect tour data
-            $tour_data['map_id'] = $row['id'];
-            $tour_data['title'] = $row['title'];
-            $tour_data['description'] = $row['description'];
-            $tour_data['context_ref_id'] = $row['context_ref_id'];
+            if (empty($tour_data)) {
+                $tour_data = [
+                    'map_id' => (int) $row['id'],
+                    'title' => $row['title'],
+                    'description' => $row['description'],
+                    'context_ref_id' => (int) $row['context_ref_id'],
+                    'tour_learnplaces' => []
+                ];
+            }
+
             $tour_data['tour_learnplaces'][] = [
                 'learnplace_ref_id' => $row['learnplace_ref_id'],
                 'visited' => $this->isVidited($this->dic->user()->getId(), $learnplace_obj_id),
@@ -241,8 +242,8 @@ class TourModel
         }
 
         // Return last context
-        if ($current_context_id !== null) {
-            yield $current_context_id => $tour_data;
+        if ($current_map_id !== null) {
+            yield $tour_data;
         }
     }
 

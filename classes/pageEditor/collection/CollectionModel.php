@@ -24,6 +24,8 @@ use function ILIAS\UI\examples\Toast\Standard\with_action;
 use function Sabre\VObject\write;
 use KPG\Learnplaces\persistence\dto\Configuration;
 use ilObject;
+use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourModel;
+use KPG\Learnplaces\persistence\dto\Location;
 
 class CollectionModel
 {
@@ -260,6 +262,87 @@ class CollectionModel
                     'render_index' => $rendered_learnplaces[$learnplace_ref_id],
                 ];
             }
+        }
+    }
+
+    /**
+     * Retrieves a generator for user-specific collections and their corresponding learnplaces.
+     *
+     * This function gathers all course and group object IDs where the user is a member,
+     * extracts the unique context reference IDs for those objects, and fetches relevant
+     * data about the collections associated with these context references. Each collection
+     * data includes details of its associated learnplaces, such as their location, visited
+     * status, and additional metadata.
+     *
+     * @return \Generator An iterable generator providing collection data, where each item
+     *                     contains collection details and its associated learnplaces.
+     *
+     * @throws \ilDatabaseException If any database query fails during collection or learnplace data retrieval.
+     */
+    public function getCollectionsOfUser(): \Generator
+    {
+        $db = $this->dic->database();
+        $tour_model = new TourModel($this->dic);
+
+        // Get all crs and grp obj_ids wher user is member
+        $assigned_objects = \ilParticipants::_getMembershipByType(
+            $this->dic->user()->getId(),
+            ['crs', 'grp'],
+            false,
+        );
+
+        // Get all context_ref_ids of assigned objects
+        $all_context_ref_ids = [];
+        foreach ($assigned_objects as $object_obj_id) {
+            $all_context_ref_ids = array_merge($all_context_ref_ids, \ilObject::_getAllReferences($object_obj_id));
+        }
+        $all_context_ref_ids = array_unique($all_context_ref_ids);
+
+        // Fetch all collection maps of user
+        $in_condition = $db->in('context_ref_id', $all_context_ref_ids, false, 'integer');
+        $res = $db->query(
+            <<<SQL
+            SELECT m.id, m.context_ref_id, m.title, m.description
+            FROM kpg_lmap_map AS m
+            WHERE {$in_condition} AND m.mode = 'collection'
+            ORDER BY m.id ASC
+            SQL
+        );
+
+        $collection_data = [];
+        while ($row = $db->fetchAssoc($res)) {
+            $collection_data = [
+                'map_id' => (int) $row['id'],
+                'title' => $row['title'],
+                'description' => $row['description'],
+                'context_ref_id' => (int) $row['context_ref_id'],
+                'collection_learnplaces' => []
+            ];
+
+            $learnplaces = $this->getLearnplacesOfCollection((int) $row['id']);
+            foreach ($learnplaces as $learnplace_item) {
+                $learnplace_ref_id = $learnplace_item['ref_id'];
+                $learnplace = $learnplace_item['object'];
+                /** @var Location $location */
+                $location = $learnplace->getLocation();
+
+                // Get visited status
+                $is_visited = $tour_model->isVidited($this->dic->user()->getId(), $learnplace->getId());
+
+                $collection_data['collection_learnplaces'][] = [
+                    'id' => $learnplace->getId(),
+                    'title' => ilObject::_lookupTitle($learnplace->getObjectId()),
+                    'latitude' => $location->getLatitude(),
+                    'longitude' => $location->getLongitude(),
+                    'radius' => $location->getRadius(),
+                    'visited' => $is_visited,
+                    'url' => ILIAS_HTTP_PATH . '/go/xsrl/' . $learnplace_ref_id,
+                    'color' => $learnplace_item['color'],
+                    'render_index' => $learnplace_item['render_index'],
+                ];
+            }
+
+            yield $collection_data;
         }
     }
 }
