@@ -6,7 +6,6 @@
 - [🏷️ Compatibility](#-compatibility)
 - [📦 Installation](#-installation)
 - [💡 Activation](#-activation)
-- [📃 License](#-license)
 
 ## 📖 Introduction
 
@@ -42,12 +41,12 @@ cd Customizing/global/plugins/Services/COPage/PageComponent
 
 **Clone with SSH**
 ```bash
-git clone git@gitlab.kroepelin-projekte.de:kpg/ilias-plugins/pagecomponent/LearnplacesMap.git LearnplacesMap
+git clone git@github.com:kroepelin-projekte/LearnplacesMap.git LearnplacesMap
 ```
 
 **Or clone with HTTPS**
 ```bash
-git clone https://gitlab.kroepelin-projekte.de/kpg/ilias-plugins/pagecomponent/LearnplacesMap.git LearnplacesMap
+git clone https://github.com/kroepelin-projekte/LearnplacesMap.git LearnplacesMap
 ```
 
 **Switch to branch**
@@ -67,7 +66,3 @@ composer du
 1. Sign in to ILIAS with Administrator privileges.
 2. Proceed to `Administration » Extending ILIAS » Plugins`
 3. Locate the desired plugin, then select `Actions » Install`, and subsequently, `Actions » Activate`.
-
-## 📃 License
-
-This commercial Plugin was developed by Kröpelin Projekt GmbH ([https://www.kroepelin-projekte.de](https://www.kroepelin-projekte.de))
