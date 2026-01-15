@@ -14,7 +14,7 @@ import Fill from 'ol/style/Fill.js';
 import Stroke from 'ol/style/Stroke.js';
 import Text from 'ol/style/Text.js';
 import {buffer as bufferExtent, isEmpty as isEmptyExtent, extend as extendExtent} from 'ol/extent.js';
-import {defaults as defaultControls} from 'ol/control.js';
+import {defaults as defaultControls, FullScreen} from 'ol/control.js';
 
 document.addEventListener('DOMContentLoaded', initLearnplacesTourMaps);
 document.addEventListener('DOMContentLoaded', initLearnplacesCollectionMaps);
@@ -145,7 +145,7 @@ function initLearnplacesTourMaps() {
         vectorLayerPoints,
       ],
       view: new View({ center: fromLonLat([0, 0]), zoom: 10 }),
-      controls: defaultControls({ rotate: false, zoom: false }),
+      controls: defaultControls({ rotate: false, zoom: false }).extend([new FullScreen()]),
     });
 
     // Fit items
@@ -308,7 +308,7 @@ function initLearnplacesCollectionMaps() {
         vectorLayerPoints,
       ],
       view: new View({ center: fromLonLat([0, 0]), zoom: 10 }),
-      controls: defaultControls({ rotate: false, zoom: false }),
+      controls: defaultControls({ rotate: false, zoom: false }).extend([new FullScreen()]),
     });
 
     // Fit items

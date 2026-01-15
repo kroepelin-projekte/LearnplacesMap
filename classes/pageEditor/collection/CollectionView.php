@@ -161,7 +161,7 @@ class CollectionView
 
             foreach ($group['learnplaces'] ?? [] as $learnplace) {
                 $html .= '<li>';
-                $html .= '<a href="' . $learnplace['url'] . '">' . htmlspecialchars($learnplace['title']) . '</a>';
+                $html .= '<a href="' . $learnplace['url'] . '" target="_self">' . htmlspecialchars($learnplace['title']) . '</a>';
                 $html .= '</li>';
             }
 

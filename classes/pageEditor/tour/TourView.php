@@ -162,7 +162,7 @@ class TourView
 
         $learnplaces_json = json_encode(['learnplaces' => $map_data['tour_learnplaces']], JSON_THROW_ON_ERROR);
 
-        $link_list = array_map(fn($item) => "<li><a href='{$item['url']}'>{$item['title']}</a></li>", $map_data['tour_learnplaces']);
+        $link_list = array_map(fn($item) => "<li><a href='{$item['url']}' target='_self'>{$item['title']}</a></li>", $map_data['tour_learnplaces']);
         $html_link_list = implode('', $link_list);
 
         $content_html = <<<HTML
@@ -174,7 +174,9 @@ class TourView
                     <p>{$map_data['description']}</p>
                     <div class="learnplaces-tour-links">
                         <h3>Lernorte</h3>
-                        $html_link_list
+                        <ol>
+                            $html_link_list
+                        </ol>
                     </div>
                 </div>
                 <div class="right-colums">
