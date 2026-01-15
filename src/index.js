@@ -145,7 +145,7 @@ function initLearnplacesTourMaps() {
         vectorLayerPoints,
       ],
       view: new View({ center: fromLonLat([0, 0]), zoom: 10 }),
-      controls: defaultControls({ rotate: false }),
+      controls: defaultControls({ rotate: false, zoom: false }),
     });
 
     // Fit items
@@ -308,7 +308,7 @@ function initLearnplacesCollectionMaps() {
         vectorLayerPoints,
       ],
       view: new View({ center: fromLonLat([0, 0]), zoom: 10 }),
-      controls: defaultControls({ rotate: false }),
+      controls: defaultControls({ rotate: false, zoom: false }),
     });
 
     // Fit items

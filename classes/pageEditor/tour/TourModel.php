@@ -252,7 +252,7 @@ class TourModel
             SELECT m.id, m.mode, m.title, m.description, m.context_ref_id, t.learnplace_ref_id, t.position
                 FROM kpg_lmap_map AS m
                 JOIN kpg_lmap_tour AS t ON m.id = t.map_id
-            WHERE m.id = %s
+            WHERE m.id = %s AND m.mode = 'tour'
             ORDER BY t.position ASC
             SQL,
             ['integer'],
@@ -261,10 +261,6 @@ class TourModel
 
         $tour_data = [];
         while ($row = $db->fetchAssoc($res)) {
-            if ($row['mode'] !== 'tour') {
-                continue;
-            }
-
             $learnplace_obj_id = \ilObject::_lookupObjectId($row['learnplace_ref_id']);
 
             if (!\ilObject::_exists($learnplace_obj_id)) {

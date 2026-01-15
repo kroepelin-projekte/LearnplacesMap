@@ -19,13 +19,11 @@ use ILIAS\Data\Order;
 use ilLearnplacesMapCollectionGUI;
 use ILIAS\UI\Component\Modal\Modal;
 use ILIAS\UI\Component\Table\Table;
-
-use function ILIAS\UI\examples\Toast\Standard\with_action;
-use function Sabre\VObject\write;
 use KPG\Learnplaces\persistence\dto\Configuration;
 use ilObject;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourModel;
 use KPG\Learnplaces\persistence\dto\Location;
+use RepositoryObject\Learnplaces\classes\api\Core\Response;
 
 class CollectionModel
 {
@@ -204,16 +202,18 @@ class CollectionModel
         $db = $this->dic->database();
 
         $sql = $db->queryF(
-            'SELECT context_ref_id, tag_name, active, color FROM kpg_lmap_collection JOIN kpg_lmap_map ON kpg_lmap_map.id = kpg_lmap_collection.map_id WHERE map_id = %s',
+            <<<SQL
+            SELECT m.title, m.description, m.context_ref_id, c.tag_name, c.active, c.color
+            FROM kpg_lmap_map AS m
+                JOIN kpg_lmap_collection AS c ON m.id = c.map_id
+            WHERE c.map_id = %s AND c.active = 1
+            SQL,
             ['integer',],
             [$map_id],
         );
 
         $rendered_learnplaces = [];
         while ($row = $db->fetchAssoc($sql)) {
-            if (!$row['active']) {
-                continue;
-            }
             $context_ref_id = (int) $row['context_ref_id'];
             $tag_name = $row['tag_name'];
             $color = $row['color'];
@@ -342,5 +342,62 @@ class CollectionModel
 
             yield $collection_data;
         }
+    }
+
+    public function getCollection(int $map_id): array
+    {
+        // todo check assignment: $collection_data['map_id']
+
+        $db = $this->dic->database();
+        $res = $db->queryF(
+            <<<SQL
+            SELECT m.id, m.context_ref_id, m.title, m.description
+            FROM kpg_lmap_map AS m
+            WHERE m.id = %s AND m.mode = 'collection'
+            ORDER BY m.id ASC
+            SQL,
+            ['integer'],
+            [$map_id]
+        );
+
+        if (!$row = $db->fetchAssoc($res)) {
+            Response::send(200, null, []);
+        }
+
+        $collection_data = [
+            'map_id' => (int) $row['id'],
+            'context_ref_id' => (int) $row['context_ref_id'],
+            'title' => $row['title'],
+            'description' => nl2br($row['description']),
+            'collection_learnplaces' => []
+        ];
+
+        $tour_model = new TourModel($this->dic);
+
+        $learnplaces = $this->getLearnplacesOfCollection($map_id);
+        foreach ($learnplaces as $learnplace_item) {
+            $learnplace_ref_id = $learnplace_item['ref_id'];
+            $learnplace = $learnplace_item['object'];
+            /** @var Location $location */
+            $location = $learnplace->getLocation();
+
+            // Get visited status of current user
+            $is_visited = $tour_model->isVisited($this->dic->user()->getId(), $learnplace->getId());
+
+            $collection_data['collection_learnplaces'][] = [
+                'id' => $learnplace->getId(),
+                'title' => \ilObject::_lookupTitle($learnplace->getObjectId()),
+                'latitude' => $location->getLatitude(),
+                'longitude' => $location->getLongitude(),
+                'radius' => $location->getRadius(),
+                'visited' => $is_visited ? 'true' : 'false',
+                'url' => ILIAS_HTTP_PATH . '/go/xsrl/' . $learnplace_ref_id,
+                'color' => $learnplace_item['color'],
+                'tag_name' => $learnplace_item['tag_name'],
+                'render_index' => $learnplace_item['render_index'],
+            ];
+        }
+
+        return $collection_data;
     }
 }

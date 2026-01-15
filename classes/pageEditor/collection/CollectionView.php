@@ -20,14 +20,21 @@ use ilLearnplacesMapCollectionGUI;
 use ILIAS\UI\Component\Modal\Modal;
 use ILIAS\UI\Component\Table\Table;
 use ILIAS\FileUpload\MimeType;
+use ILIAS\UI\Component\Legacy\Legacy;
+use KPG\Learnplaces\persistence\dto\Location;
+use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourModel;
 
 class CollectionView
 {
+    private CollectionModel $collection_model;
+
     public function __construct(
         protected Container $dic,
         protected Factory $factory,
         protected int $map_id,
     ) {
+        $this->collection_model = new CollectionModel($this->dic);
+        $this->collection_model->cleanupDeletedTagsFromCollectionMap();
     }
 
     public function getTable(): Table
@@ -87,5 +94,83 @@ class CollectionView
             ],
             $this->dic->ctrl()->getFormActionByClass(\ilLearnplacesMapCollectionGUI::class, \ilLearnplacesMapCollectionGUI::COLLECTION_SAVE_GROUP, '', true),
         )->withCancelButtonLabel($this->dic->language()->txt('close'));
+    }
+
+    public function getMap(): string
+    {
+        $tpl = $this->dic->ui()->mainTemplate();
+        $tpl->addJavaScript('Customizing/global/plugins/Services/COPage/PageComponent/LearnplacesMap/dist/bundle.js');
+        $collection_model = new CollectionModel($this->dic);
+        $tour_model = new TourModel($this->dic);
+
+        $collection_data = $collection_model->getCollection($this->map_id);
+        $learnplaces_list = $collection_data['collection_learnplaces'];
+
+        $list_html = $this->groupedLearnplacesHtml($learnplaces_list);
+
+        $learnplaces_json = json_encode(['learnplaces' => $learnplaces_list], JSON_THROW_ON_ERROR);
+
+        $link_list = array_map(fn($item) => "<li><a href='{$item['url']}'>{$item['title']}</a></li>", $learnplaces_list);
+        $html_link_list = implode('', $link_list);
+
+        $content_html = <<<HTML
+            <script type="application/json" data-learnplaces-collection="learnplaces-collection-{$this->map_id}">
+            {$learnplaces_json}
+            </script>
+            <div class="learnplaces-collection-content">
+                <div class="left-column">
+                    <p>{$collection_data['description']}</p>
+                    <div class="learnplaces-collection-links">
+                        <h3>Lernorte</h3>
+                        $list_html
+                    </div>
+                </div>
+                <div class="right-colums">
+                    <div class="learnplaces-collection-map">
+                        <div id="map-{$this->map_id}" style="width:100%; height:300px"></div>
+                    </div>
+                </div>
+            </div>
+            HTML;
+
+        return $this->dic->ui()->renderer()->render(
+            $this->dic->ui()->factory()->panel()->standard(
+                $collection_data['title'],
+                $this->dic->ui()->factory()->legacy($content_html)
+            )
+        );
+    }
+
+    private function groupedLearnplacesHtml($learnplaces_list): string
+    {
+        $grouped_learnplaces = [];
+        foreach ($learnplaces_list as $learnplace) {
+            if (!isset($grouped_learnplaces[$learnplace['tag_name']][$learnplace['id']])) {
+                $grouped_learnplaces[$learnplace['tag_name']]['color'] = $learnplace['color'];
+                $grouped_learnplaces[$learnplace['tag_name']]['learnplaces'][$learnplace['id']] = $learnplace;
+            }
+        }
+
+        $html = '<div class="learnplaces-grouped-list">';
+
+        foreach ($grouped_learnplaces as $tag_name => $group) {
+            $html .= '<div class="tag-group">';
+            $circle = '<span style="display: inline-block; width: 20px; height: 20px; border-radius: 50%; background-color: ' . $group['color'] . '; margin-right: 10px; vertical-align: middle;"></span>';
+            $html .= '<h3 style="display: flex; align-items: center;">' . $circle . htmlspecialchars($tag_name) . '</h3>';
+            $html .= '<ul>';
+
+            foreach ($group['learnplaces'] ?? [] as $learnplace) {
+                $html .= '<li>';
+                $html .= '<a href="' . $learnplace['url'] . '">' . htmlspecialchars($learnplace['title']) . '</a>';
+                $html .= '</li>';
+            }
+
+            $html .= '</ul>';
+            $html .= '</div>';
+        }
+
+        $html .= '</div>';
+
+        return $html;
     }
 }

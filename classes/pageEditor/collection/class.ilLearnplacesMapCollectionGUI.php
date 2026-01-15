@@ -83,19 +83,12 @@ class ilLearnplacesMapCollectionGUI
     private function collectionView(): void
     {
         $this->dic->tabs()->activateTab(self::COLLECTION_VIEW);
+        $this->tpl->addCss('Customizing/global/plugins/Services/COPage/PageComponent/LearnplacesMap/style/style.css');
 
-        $map_view = new CollectionMapView($this->dic, $this->map_id);
-
-        if (!$this->collection_model->hasItems($this->map_id)) {
-            $this->tpl->setContent($this->renderer->render([
-                $this->collection_view->getTable(),
-            ]));
-        } else {
-            $this->tpl->setContent($this->renderer->render([
-                $map_view->getMap(),
-                $this->collection_view->getTable(),
-            ]));
-        }
+        $this->tpl->setContent(
+            $this->collection_view->getMap()
+            . $this->renderer->render($this->collection_view->getTable())
+        );
     }
 
     /**

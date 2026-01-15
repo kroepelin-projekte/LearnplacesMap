@@ -6,11 +6,12 @@ use ILIAS\UI\Factory;
 use ILIAS\UI\Renderer;
 use ILIAS\GlobalScreen\Services;
 use Psr\Http\Message\ServerRequestInterface;
-use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourMapView;
 use Kpg\Plugins\LearnplacesMap\PageEditor\PageComponent\PageComponentService;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourModel;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Collection\CollectionMapView;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Collection\CollectionModel;
+use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourView;
+use Kpg\Plugins\LearnplacesMap\PageEditor\Collection\CollectionView;
 
 /**
  * @ilCtrl_isCalledBy ilLearnplacesMapPluginGUI: ilPCPluggedGUI
@@ -162,24 +163,23 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
         $DIC->ui()->mainTemplate()->addCss('Customizing/global/plugins/Services/COPage/PageComponent/LearnplacesMap/style/style.css');
 
         // tour or collection
-        $id = (int) $a_properties['id'];
+        $map_id = (int) $a_properties['id'];
         $mode = $a_properties['mode'];
 
         if ($mode === PageComponentService::MODE_TOUR) {
             $tour_model = new TourModel($DIC);
-            if (!$tour_model->hasItems($id)) {
+            if (!$tour_model->hasItems($map_id)) {
                 if ($a_mode === "edit") {
                     return $this->getPlaceholderHtml();
                 } else {
                     return ' ';
                 }
             }
-            $map = new TourMapView($DIC, $id);
-            $map_component = $map->getMap();
-            return "<div$edit_style class='learnplaces-map'>" . $DIC->ui()->renderer()->render($map_component) . "</div>";
+            $tour_view = new TourView($DIC, $this->factory, $map_id);
+            return "<div$edit_style class='learnplaces-map'>" . $tour_view->getMap($map_id) . "</div>";
         } elseif ($mode === PageComponentService::MODE_COLLECTION) {
             $collection_model = new CollectionModel($DIC);
-            if (!$collection_model->hasItems($id)) {
+            if (!$collection_model->hasItems($map_id)) {
                 if ($a_mode === "edit") {
                     return $this->getPlaceholderHtml();
                 } else {
@@ -187,9 +187,8 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
                 }
             }
 
-            $map = new CollectionMapView($DIC, $id);
-            $map_component = $map->getMap();
-            return "<div$edit_style class='learnplaces-map'>" . $DIC->ui()->renderer()->render($map_component) . "</div>";
+            $collection_view = new CollectionView($DIC, $this->factory, $map_id);
+            return "<div$edit_style class='learnplaces-map'>" . $collection_view->getMap() . "</div>";
         }
 
         throw new ilException('invalid_mode');

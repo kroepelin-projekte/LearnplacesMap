@@ -10,6 +10,7 @@ use ILIAS\DI\Container;
 use ilLearnplacesMapPluginGUI;
 use ilObject;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourModel;
+use Kpg\Plugins\LearnplacesMap\PageEditor\Collection\CollectionModel;
 
 class PageComponentService
 {
@@ -108,9 +109,11 @@ class PageComponentService
         $map = $this->getInfo($map_id);
 
         $title = $this->factory->input()->field()->text($this->dic->language()->txt('title'))
+            ->withMaxLength(400)
             ->withRequired(true)
             ->withValue($map['title']);
         $description = $this->factory->input()->field()->textarea($this->dic->language()->txt('description'))
+            ->withMaxLimit(400)
             ->withValue($map['description']);
 
         $section = $this->factory->input()->field()->section(
@@ -123,34 +126,28 @@ class PageComponentService
 
         return $this->factory->input()->container()->form()->standard(
             $action,
-            [
-                'section' => $section,
-            ],
+            ['section' => $section],
         );
     }
 
     public function deleteMap(int $map_id, string $mode): void
     {
-        $tour_model = new TourModel($this->dic);
-
         if ($mode === self::MODE_TOUR) {
+            $tour_model = new TourModel($this->dic);
             $tour_model->deleteAllItems($map_id);
+        } elseif ($mode === self::MODE_COLLECTION) {
+            $collection_model = new CollectionModel($this->dic);
+            $collection_model->deleteAllGroups($map_id);
+        }
 
-            $this->dic->database()->manipulateF(
-                <<<SQL
+        $this->dic->database()->manipulateF(
+            <<<SQL
             DELETE FROM kpg_lmap_map
             WHERE id = %s
             SQL,
-                [
-                    'integer',
-                ],
-                [
-                    $map_id,
-                ],
-            );
-        } elseif ($mode === self::MODE_COLLECTION) {
-            // todo delete
-        }
+            ['integer'],
+            [$map_id],
+        );
     }
 
     public function getModeForm(string $form_action): Standard
@@ -161,9 +158,10 @@ class PageComponentService
             ->withRequired(true);
 
         $title_input = $this->dic->ui()->factory()->input()->field()->text('Titel')
+            ->withmaxLength(400)
             ->withRequired(true);
 
-        $description_input = $this->dic->ui()->factory()->input()->field()->textarea('Beschreibung');
+        $description_input = $this->dic->ui()->factory()->input()->field()->textarea('Beschreibung')->withMaxLimit(400);
 
         $section = $this->dic->ui()->factory()->input()->field()->section(
             [
@@ -176,9 +174,7 @@ class PageComponentService
 
         return $this->dic->ui()->factory()->input()->container()->form()->standard(
             $form_action,
-            [
-                'section' => $section,
-            ],
+            ['section' => $section],
         );
     }
 }
