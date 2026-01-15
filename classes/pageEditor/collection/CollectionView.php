@@ -26,6 +26,7 @@ class CollectionView
     public function __construct(
         protected Container $dic,
         protected Factory $factory,
+        protected int $map_id,
     ) {
     }
 
@@ -55,7 +56,7 @@ class CollectionView
                 )->withIsSortable(false),
                 'color' => $this->factory->table()->column()->text('Farbe')->withIsSortable(false),
             ],
-            new TableDataRetrieval($this->dic),
+            new TableDataRetrieval($this->dic, $this->map_id),
         )
             ->withActions($actions)
             ->withRequest($this->dic->http()->request());
@@ -71,7 +72,7 @@ class CollectionView
         }
 
         $collection_model = new CollectionModel($this->dic);
-        $record = $collection_model->getGroup($tag_name);
+        $record = $collection_model->getGroup($tag_name, $this->map_id);
         $type = 'color_radio';
         $active = (bool) $record['active'];
         $color = $record['color'];

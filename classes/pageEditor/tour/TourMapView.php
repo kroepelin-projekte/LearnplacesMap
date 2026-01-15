@@ -52,7 +52,7 @@ class TourMapView
 
             // Get visited status of current user
             $tour_model = new TourModel($this->dic);
-            $is_visited = $tour_model->isVidited($this->dic->user()->getId(), $learnplace->getId());
+            $is_visited = $tour_model->isVisited($this->dic->user()->getId(), $learnplace->getId());
 
             $learnplaces_list[] = [
                 'title' => ilObject::_lookupTitle($learnplace->getObjectId()),

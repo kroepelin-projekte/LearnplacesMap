@@ -18,6 +18,7 @@ class TableDataRetrieval implements DataRetrieval
 {
     public function __construct(
         protected Container $dic,
+        protected int $map_id,
     ) {
     }
 
@@ -36,7 +37,7 @@ class TableDataRetrieval implements DataRetrieval
         $collection_model = new CollectionModel($this->dic);
 
         foreach ($tags_of_learnplaces_in_course as $tag_name) {
-            $record = $collection_model->getGroup($tag_name);
+            $record = $collection_model->getGroup($tag_name, $this->map_id);
 
             $active = $record['active'] ? true : false;
             $color = $record['color'];

@@ -179,17 +179,13 @@ class CollectionModel
         return $this->dic->database()->fetchObject($sql)->count === 1;
     }
 
-    public function getGroup(string $tag_name): ?array
+    public function getGroup(string $tag_name, int $map_id): ?array
     {
         $db = $this->dic->database();
         $sql = $db->queryF(
-            "SELECT * FROM kpg_lmap_collection WHERE tag_name = %s",
-            [
-                'text',
-            ],
-            [
-                $tag_name,
-            ]
+            "SELECT * FROM kpg_lmap_collection WHERE tag_name = %s AND map_id = %s",
+            ['text', 'integer'],
+            [$tag_name, $map_id],
         );
 
         if ($rec = $db->fetchAssoc($sql)) {
@@ -259,6 +255,7 @@ class CollectionModel
                     'ref_id' => $learnplace_ref_id,
                     'object' => $object_learnplace,
                     'color' => $color,
+                    'tag_name' => $tag_name,
                     'render_index' => $rendered_learnplaces[$learnplace_ref_id],
                 ];
             }
@@ -314,7 +311,7 @@ class CollectionModel
             $collection_data = [
                 'map_id' => (int) $row['id'],
                 'title' => $row['title'],
-                'description' => $row['description'],
+                'description' => nl2br($row['description']),
                 'context_ref_id' => (int) $row['context_ref_id'],
                 'collection_learnplaces' => []
             ];
@@ -327,7 +324,7 @@ class CollectionModel
                 $location = $learnplace->getLocation();
 
                 // Get visited status
-                $is_visited = $tour_model->isVidited($this->dic->user()->getId(), $learnplace->getId());
+                $is_visited = $tour_model->isVisited($this->dic->user()->getId(), $learnplace->getId());
 
                 $collection_data['collection_learnplaces'][] = [
                     'id' => $learnplace->getId(),
@@ -338,6 +335,7 @@ class CollectionModel
                     'visited' => $is_visited,
                     'url' => ILIAS_HTTP_PATH . '/go/xsrl/' . $learnplace_ref_id,
                     'color' => $learnplace_item['color'],
+                    'tag_name' => $learnplace_item['tag_name'],
                     'render_index' => $learnplace_item['render_index'],
                 ];
             }

@@ -93,14 +93,23 @@ class ilLearnplacesMapTourGUI
 
         $modal_and_button = $this->tour_view->addItemModal();
 
-        $this->tpl->setContent($this->renderer->render([
-            $this->map_view->getMap(),
-            $this->factory->divider()->horizontal(),
-            $modal_and_button['modal'],
-            $modal_and_button['button'],
-            $this->factory->divider()->horizontal(),
-            $this->tour_view->getTable($this->map_id),
-        ]));
+        if ($this->tour_model->hasItems($this->map_id)) {
+            $this->tpl->setContent($this->renderer->render([
+                $this->map_view->getMap(),
+                $this->factory->divider()->horizontal(),
+                $modal_and_button['modal'],
+                $modal_and_button['button'],
+                $this->factory->divider()->horizontal(),
+                $this->tour_view->getTable($this->map_id),
+            ]));
+        } else {
+            $this->tpl->setContent($this->renderer->render([
+                $modal_and_button['modal'],
+                $modal_and_button['button'],
+                $this->factory->divider()->horizontal(),
+                $this->tour_view->getTable($this->map_id),
+            ]));
+        }
     }
 
     private function tourSaveOrder(): void

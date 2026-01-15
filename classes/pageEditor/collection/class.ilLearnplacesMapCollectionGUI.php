@@ -42,10 +42,10 @@ class ilLearnplacesMapCollectionGUI
         $this->factory = $DIC->ui()->factory();
         $this->renderer = $DIC->ui()->renderer();
         $this->request = $DIC->http()->request();
-        $this->collection_view = new CollectionView($this->dic, $this->factory);
-        $this->collection_model = new CollectionModel($this->dic);
         $this->map_id = (int) $this->parent_gui->getProperties()['id'];
         $this->page_component_service = new PageComponentService($this->dic, $this->factory);
+        $this->collection_view = new CollectionView($this->dic, $this->factory, $this->map_id);
+        $this->collection_model = new CollectionModel($this->dic);
     }
 
     public function executeCommand(): void

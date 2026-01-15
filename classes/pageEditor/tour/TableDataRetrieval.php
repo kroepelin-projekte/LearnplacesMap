@@ -27,12 +27,8 @@ class TableDataRetrieval implements OrderingBinding
             WHERE map_id = %s
             ORDER BY position
             SQL,
-            [
-                'integer',
-            ],
-            [
-                $this->map_id
-            ]
+            ['integer',],
+            [$this->map_id]
         );
 
         while ($row = $db->fetchAssoc($sql)) {

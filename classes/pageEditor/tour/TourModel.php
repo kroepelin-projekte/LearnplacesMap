@@ -137,7 +137,7 @@ class TourModel
         );
     }
 
-    public function isVidited(int $user_id, int $learnplace_id): bool
+    public function isVisited(int $user_id, int $learnplace_id): bool
     {
         $db = $this->dic->database();
         $sql = $db->queryF(
@@ -229,16 +229,13 @@ class TourModel
                 $tour_data = [
                     'map_id' => (int) $row['id'],
                     'title' => $row['title'],
-                    'description' => $row['description'],
+                    'description' => nl2br($row['description']),
                     'context_ref_id' => (int) $row['context_ref_id'],
                     'tour_learnplaces' => []
                 ];
             }
 
-            $tour_data['tour_learnplaces'][] = [
-                'learnplace_ref_id' => $row['learnplace_ref_id'],
-                'visited' => $this->isVidited($this->dic->user()->getId(), $learnplace_obj_id),
-            ];
+            $tour_data['tour_learnplaces'][] = $row['learnplace_ref_id'];
         }
 
         // Return last context
@@ -276,12 +273,9 @@ class TourModel
 
             $tour_data['map_id'] = $row['id'];
             $tour_data['title'] = $row['title'];
-            $tour_data['description'] = $row['description'];
+            $tour_data['description'] = nl2br($row['description']);
             $tour_data['context_ref_id'] = $row['context_ref_id'];
-            $tour_data['tour_learnplaces'][] = [
-                'learnplace_ref_id' => $row['learnplace_ref_id'],
-                'visited' => $this->isVidited($this->dic->user()->getId(), $learnplace_obj_id),
-            ];
+            $tour_data['tour_learnplaces'][] = $row['learnplace_ref_id'];
         }
 
         // todo check assignment: $tour_data['context_ref_id']
