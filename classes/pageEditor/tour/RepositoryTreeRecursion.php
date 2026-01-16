@@ -15,17 +15,27 @@ class RepositoryTreeRecursion implements TreeRecursion
     ) {
     }
 
+    /**
+     * @param $record
+     * @param $environment
+     * @return array
+     */
     public function getChildren($record, $environment = null): array
     {
         return $this->dic->repositoryTree()->getChilds((int) $record['ref_id']);
     }
 
+    /**
+     * @param Node\Factory $factory
+     * @param              $record
+     * @param              $environment
+     * @return Node\Node
+     */
     public function build(Node\Factory $factory, $record, $environment = null): Node\Node
     {
         $ref_id = $record['ref_id'];
         $label = '<input type="radio" id="' . $ref_id . '" name="learnplace" value="' . $ref_id . '" style="margin-right: 5px;">';
         $label .= '<label for="' . $ref_id . '">' . $record['title'] . ' (' . $record['type'] . ', ' . $ref_id . ')</label>';
-        // $icon = $environment['icon_factory']->standard($record["type"], '');
 
         /** @var Node\Node $node */
         $node = $factory->simple($label, null)->withExpanded(true);

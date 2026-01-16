@@ -8,7 +8,6 @@ use ILIAS\GlobalScreen\Services;
 use Psr\Http\Message\ServerRequestInterface;
 use Kpg\Plugins\LearnplacesMap\PageEditor\PageComponent\PageComponentService;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourModel;
-use Kpg\Plugins\LearnplacesMap\PageEditor\Collection\CollectionMapView;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Collection\CollectionModel;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourView;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Collection\CollectionView;
@@ -45,8 +44,15 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
 
     public function executeCommand(): void
     {
+        // Redirect if Learnplaces plugin is not active
+        $learnplaces_plugin_is_active = \ilObjectPlugin::getPluginObjectByType('xsrl')->isActive();
+        if (!$learnplaces_plugin_is_active) {
+            $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_FAILURE, 'Learnplaces plugin is not active.', true);
+            $this->returnToParent();
+        }
+
         $this->hideToolMenu();
-        $this->tpl->setTitle('Lernort Karte'); // todo lang
+        $this->tpl->setTitle($this->plugin->txt('learnplaces_map'));
 
         $cmd = $this->ctrl->getCmd();
         $next_class = $this->ctrl->getNextClass();
@@ -133,6 +139,9 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
         $this->returnToParent();
     }
 
+    /**
+     * @return void
+     */
     private function hideToolMenu(): void
     {
         $collection = $this->globalscreen->tool()->context()->current()->getAdditionalData();
@@ -141,6 +150,13 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
         }
     }
 
+    /**
+     * @param string $a_mode
+     * @param array  $a_properties
+     * @param string $plugin_version
+     * @return string
+     * @throws ilException
+     */
     public function getElementHTML(string $a_mode, array $a_properties, string $plugin_version): string
     {
         global $DIC;
@@ -176,7 +192,7 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
                 }
             }
             $tour_view = new TourView($DIC, $this->factory, $map_id);
-            return "<div$edit_style class='learnplaces-map'>" . $tour_view->getMap($map_id) . "</div>";
+            return "<div$edit_style class='learnplaces-map'>" . $tour_view->getMap() . "</div>";
         } elseif ($mode === PageComponentService::MODE_COLLECTION) {
             $collection_model = new CollectionModel($DIC);
             if (!$collection_model->hasItems($map_id)) {
@@ -194,12 +210,15 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
         throw new ilException('invalid_mode');
     }
 
+    /**
+     * @return string
+     */
     private function getPlaceholderHtml(): string
     {
         return <<<HTML
                 <div class="learnplaces-map-placeholder">
                     <div class="placeholder-text">
-                        Bitte öffnen, um die Lernort-Karte zu bearbeiten.
+                        {$this->plugin->txt('reopen_message')}
                     </div>
                 </div>
                 HTML;

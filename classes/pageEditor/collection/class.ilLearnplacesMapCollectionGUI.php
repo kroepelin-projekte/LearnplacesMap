@@ -7,7 +7,6 @@ use Kpg\Plugins\LearnplacesMap\PageEditor\Collection\CollectionView;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Collection\CollectionModel;
 use Kpg\Plugins\LearnplacesMap\PageEditor\PageComponent\PageComponentService;
 use JetBrains\PhpStorm\NoReturn;
-use Kpg\Plugins\LearnplacesMap\PageEditor\Collection\CollectionMapView;
 
 /**
  * @ilCtrl_IsCalledBy ilLearnplacesMapCollectionGUI: ilLearnplacesMapPluginGUI
@@ -48,6 +47,10 @@ class ilLearnplacesMapCollectionGUI
         $this->collection_model = new CollectionModel($this->dic);
     }
 
+    /**
+     * @return void
+     * @throws ilCtrlException
+     */
     public function executeCommand(): void
     {
         $this->initTabs();
@@ -65,6 +68,10 @@ class ilLearnplacesMapCollectionGUI
         }
     }
 
+    /**
+     * @return void
+     * @throws ilCtrlException
+     */
     private function initTabs(): void
     {
         $this->dic->tabs()->addTab(
@@ -80,6 +87,9 @@ class ilLearnplacesMapCollectionGUI
         );
     }
 
+    /**
+     * @return void
+     */
     private function collectionView(): void
     {
         $this->dic->tabs()->activateTab(self::COLLECTION_VIEW);
@@ -116,6 +126,10 @@ class ilLearnplacesMapCollectionGUI
         $this->ctrl->redirect($this, self::COLLECTION_VIEW);
     }
 
+    /**
+     * @return void
+     * @throws ilCtrlException
+     */
     private function showMapSettings(): void
     {
         $this->dic->tabs()->activateTab(self::SHOW_MAP_SETTINGS);
@@ -130,6 +144,10 @@ class ilLearnplacesMapCollectionGUI
         ]));
     }
 
+    /**
+     * @return void
+     * @throws ilCtrlException
+     */
     private function saveMapSettings(): void
     {
         $form = $this->page_component_service->getMapUpdateForm(

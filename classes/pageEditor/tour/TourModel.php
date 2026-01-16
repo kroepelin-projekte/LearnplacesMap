@@ -28,6 +28,11 @@ class TourModel
         $this->learnplace_service = PluginContainer::resolve(LearnplaceRepository::class);
     }
 
+    /**
+     * @param int $map_id
+     * @param int $learnplace_ref_id
+     * @return void
+     */
     public function addItem(int $map_id, int $learnplace_ref_id): void
     {
         if ($this->itemExists($map_id, $learnplace_ref_id)) {
@@ -44,6 +49,11 @@ class TourModel
         ]);
     }
 
+    /**
+     * @param int $map_id
+     * @param int $learnplace_ref_id
+     * @return bool
+     */
     private function itemExists(int $map_id, int $learnplace_ref_id): bool
     {
         $sql = $this->dic->database()->queryF(
@@ -66,6 +76,10 @@ class TourModel
         return (bool) $item->count;
     }
 
+    /**
+     * @param int $map_id
+     * @return bool
+     */
     public function hasItems(int $map_id): bool
     {
         $sql = $this->dic->database()->queryF(
@@ -105,7 +119,7 @@ class TourModel
         $this->dic->database()->manipulateF(
             <<<SQL
             DELETE FROM kpg_lmap_tour
-            WHERE {$condition} AND map_id = %s
+            WHERE $condition AND map_id = %s
             SQL,
             ['integer',],
             [$map_id,],
@@ -128,6 +142,11 @@ class TourModel
         );
     }
 
+    /**
+     * @param int $id
+     * @param int $new_position
+     * @return void
+     */
     public function updatePosition(int $id, int $new_position): void
     {
         $this->dic->database()->manipulateF(
@@ -145,6 +164,11 @@ class TourModel
         );
     }
 
+    /**
+     * @param int $user_id
+     * @param int $learnplace_id
+     * @return bool
+     */
     public function isVisited(int $user_id, int $learnplace_id): bool
     {
         $db = $this->dic->database();
@@ -163,6 +187,9 @@ class TourModel
         return (bool) $db->fetchObject($sql)->visited;
     }
 
+    /**
+     * @return void
+     */
     public function cleanupDeletedLearnplacesFromTourMaps(): void
     {
         $db = $this->dic->database();
@@ -178,12 +205,12 @@ class TourModel
 
         if (!empty($ids_to_delete)) {
             $in_condition = $db->in('learnplace_ref_id', $ids_to_delete, false, 'integer');
-            $db->manipulate("DELETE FROM kpg_lmap_tour WHERE {$in_condition}");
+            $db->manipulate("DELETE FROM kpg_lmap_tour WHERE $in_condition");
         }
     }
 
     /**
-     * This function is used by the learnplaces plugin.
+     * @return \Generator
      */
     public function getTourMapsOfUser(): \Generator
     {
@@ -209,7 +236,7 @@ class TourModel
             SELECT m.id, m.mode, m.title, m.description, m.context_ref_id, t.learnplace_ref_id, t.position
             FROM kpg_lmap_map AS m
             JOIN kpg_lmap_tour AS t ON m.id = t.map_id
-            WHERE {$in_condition} AND m.mode = 'tour'
+            WHERE $in_condition AND m.mode = 'tour'
             ORDER BY m.id, t.position ASC
             SQL
         );
@@ -266,6 +293,10 @@ class TourModel
         }
     }
 
+    /**
+     * @param int $map_id
+     * @return array|null
+     */
     public function getTourMap(int $map_id): array|null
     {
         $db = $this->dic->database();

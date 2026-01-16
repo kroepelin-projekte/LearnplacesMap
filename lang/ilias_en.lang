@@ -1,1 +1,9 @@
 cmd_insert#:#Insert Learnplaces Map
+learnplaces_map#:#Learnplaces Map
+learnplace#:#Learnplace
+reopen_message#:#Please reopen this page component to edit the map.
+nothing_selected#:#No learnplaces selected.
+deleted#:#Successfully deleted.
+add_learnplace#:#Add learnplace
+color#:#Color
+tag_name#:#Tag name

@@ -23,6 +23,12 @@ class PageComponentService
     ) {
     }
 
+    /**
+     * @param string $mode
+     * @param string $title
+     * @param string $description
+     * @return int
+     */
     public function addMap(string $mode, string $title, string $description): int
     {
         $id = $this->dic->database()->nextId('kpg_lmap_map');
@@ -36,6 +42,12 @@ class PageComponentService
         return $id;
     }
 
+    /**
+     * @param int    $map_id
+     * @param string $title
+     * @param string $description
+     * @return void
+     */
     public function updateMap(int $map_id, string $title, string $description): void
     {
         $this->dic->database()->manipulateF(
@@ -86,6 +98,11 @@ class PageComponentService
         ];
     }
 
+    /**
+     * @param int $map_id
+     * @param int $course_ref_id
+     * @return void
+     */
     public function updateCourseRefId(int $map_id, int $course_ref_id): void
     {
         $this->dic->database()->manipulateF(
@@ -104,6 +121,11 @@ class PageComponentService
 
     }
 
+    /**
+     * @param int    $map_id
+     * @param string $action
+     * @return Standard
+     */
     public function getMapUpdateForm(int $map_id, string $action): Standard
     {
         $map = $this->getInfo($map_id);
@@ -130,6 +152,11 @@ class PageComponentService
         );
     }
 
+    /**
+     * @param int    $map_id
+     * @param string $mode
+     * @return void
+     */
     public function deleteMap(int $map_id, string $mode): void
     {
         if ($mode === self::MODE_TOUR) {
@@ -150,6 +177,10 @@ class PageComponentService
         );
     }
 
+    /**
+     * @param string $form_action
+     * @return Standard
+     */
     public function getModeForm(string $form_action): Standard
     {
         $mode_radio_input = $this->dic->ui()->factory()->input()->field()->radio('Mode')

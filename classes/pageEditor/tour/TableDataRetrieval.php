@@ -15,6 +15,11 @@ class TableDataRetrieval implements OrderingBinding
     ) {
     }
 
+    /**
+     * @param OrderingRowBuilder $row_builder
+     * @param array              $visible_column_ids
+     * @return \Generator
+     */
     public function getRows(OrderingRowBuilder $row_builder, array $visible_column_ids): \Generator
     {
         global $DIC;

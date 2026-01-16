@@ -27,6 +27,7 @@ use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourModel;
 class CollectionView
 {
     private CollectionModel $collection_model;
+    private \ilPlugin|\ilLearnplacesMapPlugin $plugin;
 
     public function __construct(
         protected Container $dic,
@@ -35,8 +36,13 @@ class CollectionView
     ) {
         $this->collection_model = new CollectionModel($this->dic);
         $this->collection_model->cleanupDeletedTagsFromCollectionMap();
+        $this->plugin = \ilObjectPlugin::getPluginObjectByType('lmap');
     }
 
+    /**
+     * @return Table
+     * @throws \ilCtrlException
+     */
     public function getTable(): Table
     {
         // edit single action
@@ -56,12 +62,12 @@ class CollectionView
         return $this->factory->table()->data(
             '',
             [
-                'tag_name' => $this->factory->table()->column()->text('Tag Name')->withIsSortable(false),
+                'tag_name' => $this->factory->table()->column()->text($this->plugin->txt('tag_name'))->withIsSortable(false),
                 'active' => $this->factory->table()->column()->boolean(
                     'Aktiv', $this->factory->symbol()->glyph()->apply(),
                     '',
                 )->withIsSortable(false),
-                'color' => $this->factory->table()->column()->text('Farbe')->withIsSortable(false),
+                'color' => $this->factory->table()->column()->text($this->plugin->txt('color'))->withIsSortable(false),
             ],
             new TableDataRetrieval($this->dic, $this->map_id),
         )
@@ -69,6 +75,10 @@ class CollectionView
             ->withRequest($this->dic->http()->request());
     }
 
+    /**
+     * @return Modal
+     * @throws \ilCtrlException
+     */
     public function getEditModal(): Modal
     {
         $query = $this->dic->http()->wrapper()->query();
@@ -96,6 +106,10 @@ class CollectionView
         )->withCancelButtonLabel($this->dic->language()->txt('close'));
     }
 
+    /**
+     * @return string
+     * @throws \ILIAS\HTTP\Response\Sender\ResponseSendingException
+     */
     public function getMap(): string
     {
         $tpl = $this->dic->ui()->mainTemplate();
@@ -114,20 +128,20 @@ class CollectionView
         $html_link_list = implode('', $link_list);
 
         $content_html = <<<HTML
-            <script type="application/json" data-learnplaces-collection="learnplaces-collection-{$this->map_id}">
+            <script type="application/json" data-learnplaces-collection="learnplaces-collection-$this->map_id">
             {$learnplaces_json}
             </script>
             <div class="learnplaces-collection-content">
                 <div class="left-column">
                     <p>{$collection_data['description']}</p>
                     <div class="learnplaces-collection-links">
-                        <h3>Lernorte</h3>
+                        <h3>{$this->plugin->txt('learnplace')}</h3>
                         $list_html
                     </div>
                 </div>
                 <div class="right-colums">
                     <div class="learnplaces-collection-map">
-                        <div id="map-{$this->map_id}" style="width:100%; height:300px"></div>
+                        <div id="map-$this->map_id" style="width:100%; height:300px"></div>
                     </div>
                 </div>
             </div>
@@ -141,6 +155,10 @@ class CollectionView
         );
     }
 
+    /**
+     * @param $learnplaces_list
+     * @return string
+     */
     private function groupedLearnplacesHtml($learnplaces_list): string
     {
         $grouped_learnplaces = [];

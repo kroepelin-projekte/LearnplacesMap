@@ -18,19 +18,18 @@ use KPG\Learnplaces\container\PluginContainer;
 
 class TourView
 {
-    private LearnplaceRepository $learnplace_service;
     private TourModel $tour_model;
+    private \ilPlugin|\ilLearnplacesMapPlugin $plugin;
 
     public function __construct(
         protected Container $dic,
         protected Factory $factory,
         protected int $map_id,
     ) {
-        /** @var LearnplaceRepository $learnplace_service  */
-        $this->learnplace_service = PluginContainer::resolve(LearnplaceRepository::class);
         $this->tour_model = new TourModel($this->dic);
         // Cleanup deleted learnplaces from tour maps
         $this->tour_model->cleanupDeletedLearnplacesFromTourMaps();
+        $this->plugin = \ilObjectPlugin::getPluginObjectByType('lmap');
     }
 
     /**
@@ -40,7 +39,7 @@ class TourView
     public function addItemModal(): array
     {
         $modal = $this->factory->modal()->roundtrip(
-            'Lernort hinzufügen',
+            $this->plugin->txt('add_learnplace'),
             $this->getRepositoryTree(),
             [
                 'ref_id' => $this->factory->input()->field()->hidden()->withAdditionalOnLoadCode(
@@ -56,9 +55,9 @@ class TourView
                 )
             ],
             $this->dic->ctrl()->getLinkTargetByClass(\ilLearnplacesMapTourGUI::class, \ilLearnplacesMapTourGUI::TOUR_ADD_ITEM),
-        )->withCancelButtonLabel($this->dic->language()->txt('close'));;
+        )->withCancelButtonLabel($this->dic->language()->txt('close'));
 
-        $button = $this->factory->button()->standard('Lernort hinzufügen', '#')->withonClick($modal->getShowSignal());
+        $button = $this->factory->button()->standard($this->plugin->txt('add_learnplace'), '#')->withonClick($modal->getShowSignal());
 
         return [
             'button' => $button,
@@ -66,6 +65,10 @@ class TourView
         ];
     }
 
+    /**
+     * @return Table
+     * @throws \ilCtrlException
+     */
     public function getTable(): Table
     {
         $this->dic->ui()->mainTemplate()->addInlineCss('.c-table-data__positioninput label { display: none; }');
@@ -100,6 +103,9 @@ class TourView
             ->withRequest($this->dic->http()->request());
     }
 
+    /**
+     * @return Tree
+     */
     public function getRepositoryTree(): Tree
     {
         $course_ref_id = \ilLearnplacesMapPlugin::getContext();
@@ -111,12 +117,12 @@ class TourView
         );
 
         return $this->factory->tree()->expandable("Lernorte", new RepositoryTreeRecursion($this->dic))
-            /*->withEnvironment([
-             'icon_factory' => $this->factory->symbol()->icon(),
-            ])*/
             ->withData($all_learnplaces_in_course);
     }
 
+    /**
+     * @return string
+     */
     public function getMap(): string
     {
         $tpl = $this->dic->ui()->mainTemplate();
@@ -134,14 +140,14 @@ class TourView
         $html_link_list = implode('', $link_list);
 
         $content_html = <<<HTML
-            <script type="application/json" data-learnplaces-tour="learnplaces-tour-{$this->map_id}">
+            <script type="application/json" data-learnplaces-tour="learnplaces-tour-$this->map_id">
             {$learnplaces_json}
             </script>
             <div class="learnplaces-tour-content">
                 <div class="left-column">
                     <p>{$tour_map_data['description']}</p>
                     <div class="learnplaces-tour-links">
-                        <h3>Lernorte</h3>
+                        <h3>{$this->plugin->txt('learnplace')}</h3>
                         <ol>
                             $html_link_list
                         </ol>
@@ -149,7 +155,7 @@ class TourView
                 </div>
                 <div class="right-colums">
                     <div class="learnplaces-tour-map">
-                        <div id="map-{$this->map_id}" style="width:100%; height:300px"></div>
+                        <div id="map-$this->map_id" style="width:100%; height:300px"></div>
                     </div>
                 </div>
             </div>

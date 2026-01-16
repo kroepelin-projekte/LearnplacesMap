@@ -36,6 +36,10 @@ class CollectionModel
         $this->learnplace_service = PluginContainer::resolve(LearnplaceRepository::class);
     }
 
+    /**
+     * @param int $map_id
+     * @return bool
+     */
     public function hasItems(int $map_id): bool
     {
         $sql = $this->dic->database()->queryF(
@@ -52,6 +56,11 @@ class CollectionModel
         return (bool) $item->count;
     }
 
+    /**
+     * @param int    $map_id
+     * @param string $tag_name
+     * @return void
+     */
     public function deleteGroup(int $map_id, string $tag_name): void
     {
         $this->dic->database()->manipulateF(
@@ -83,6 +92,9 @@ class CollectionModel
         );
     }
 
+    /**
+     * @return void
+     */
     public function cleanupDeletedTagsFromCollectionMap(): void
     {
         $db = $this->dic->database();
@@ -117,6 +129,13 @@ class CollectionModel
         }
     }
 
+    /**
+     * @param int    $map_id
+     * @param string $tag_name
+     * @param bool   $active
+     * @param string $color
+     * @return void
+     */
     public function storeGroup(int $map_id, string $tag_name, bool $active, string $color): void
     {
         $db = $this->dic->database();
@@ -160,6 +179,11 @@ class CollectionModel
         }
     }
 
+    /**
+     * @param int    $map_id
+     * @param string $tag_name
+     * @return bool
+     */
     private function groupExists(int $map_id, string $tag_name): bool
     {
         $sql = $this->dic->database()->queryF(
@@ -177,6 +201,11 @@ class CollectionModel
         return $this->dic->database()->fetchObject($sql)->count === 1;
     }
 
+    /**
+     * @param string $tag_name
+     * @param int    $map_id
+     * @return array|null
+     */
     public function getGroup(string $tag_name, int $map_id): ?array
     {
         $db = $this->dic->database();
@@ -197,6 +226,10 @@ class CollectionModel
         ];
     }
 
+    /**
+     * @param int $map_id
+     * @return \Generator
+     */
     public function getLearnplacesOfCollection(int $map_id): \Generator
     {
         $db = $this->dic->database();
@@ -301,7 +334,7 @@ class CollectionModel
             <<<SQL
             SELECT m.id, m.context_ref_id, m.title, m.description
             FROM kpg_lmap_map AS m
-            WHERE {$in_condition} AND m.mode = 'collection'
+            WHERE $in_condition AND m.mode = 'collection'
             ORDER BY m.id ASC
             SQL
         );
@@ -344,6 +377,11 @@ class CollectionModel
         }
     }
 
+    /**
+     * @param int $map_id
+     * @return array
+     * @throws \ILIAS\HTTP\Response\Sender\ResponseSendingException
+     */
     public function getCollection(int $map_id): array
     {
         $db = $this->dic->database();

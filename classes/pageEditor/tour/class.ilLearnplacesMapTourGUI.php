@@ -31,6 +31,7 @@ class ilLearnplacesMapTourGUI
     private TourView $tour_view;
     private TourModel $tour_model;
     private PageComponentService $page_component_service;
+    private ilPlugin|ilLearnplacesMapPlugin $plugin;
 
     public function __construct(
         protected ilLearnplacesMapPluginGUI $parent_gui,
@@ -49,8 +50,12 @@ class ilLearnplacesMapTourGUI
         $this->tour_view = new TourView($DIC, $this->factory, $this->map_id);
         $this->tour_model = new TourModel($DIC);
         $this->page_component_service = new PageComponentService($this->dic, $this->factory);
+        $this->plugin = ilObjectPlugin::getPluginObjectByType('lmap');
     }
 
+    /**
+     * @return void
+     */
     public function executeCommand(): void
     {
         $this->initTabs();
@@ -69,6 +74,10 @@ class ilLearnplacesMapTourGUI
         }
     }
 
+    /**
+     * @return void
+     * @throws ilCtrlException
+     */
     private function initTabs(): void
     {
         $this->dic->tabs()->addTab(
@@ -84,6 +93,9 @@ class ilLearnplacesMapTourGUI
         );
     }
 
+    /**
+     * @return void
+     */
     private function tourView(): void
     {
         $this->dic->tabs()->activateTab(self::TOUR_VIEW);
@@ -92,19 +104,23 @@ class ilLearnplacesMapTourGUI
         $modal_and_button = $this->tour_view->addItemModal();
 
         $this->tpl->setContent(
-            $this->tour_view->getMap($this->map_id)
+            $this->tour_view->getMap()
             . $this->renderer->render([
                 $this->factory->divider()->horizontal(),
                 $modal_and_button['modal'],
                 $modal_and_button['button'],
                 $this->factory->divider()->horizontal(),
-                $this->tour_view->getTable($this->map_id),
+                $this->tour_view->getTable(),
         ]));
     }
 
+    /**
+     * @return void
+     * @throws ilCtrlException
+     */
     private function tourSaveOrder(): void
     {
-        $table = $this->tour_view->getTable($this->map_id);
+        $table = $this->tour_view->getTable();
         $order = $table->withRequest($this->request)->getData();
 
         foreach ($order as $new_position => $id) {
@@ -115,6 +131,10 @@ class ilLearnplacesMapTourGUI
         $this->ctrl->redirect($this, self::TOUR_VIEW);
     }
 
+    /**
+     * @return void
+     * @throws ilCtrlException
+     */
     private function tourAddItem(): void
     {
         global $DIC;
@@ -123,7 +143,7 @@ class ilLearnplacesMapTourGUI
         $form_data = $modal->getForm()->withRequest($this->request)->getData();
         $ref_id = ((int) $form_data['ref_id']) ?? null;
         if (!$ref_id) {
-            $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_FAILURE, 'Bitte wählen Sie einen Lernort aus.', true);
+            $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_FAILURE, $this->plugin->txt('nothing_selected'), true);
             $this->ctrl->redirect($this, self::TOUR_VIEW);
         }
 
@@ -132,6 +152,10 @@ class ilLearnplacesMapTourGUI
         $this->ctrl->redirect($this, self::TOUR_VIEW);
     }
 
+    /**
+     * @return void
+     * @throws ilCtrlException
+     */
     private function tourDeleteItem(): void
     {
         $query = $this->http->wrapper()->query();
@@ -144,14 +168,18 @@ class ilLearnplacesMapTourGUI
                 $ids = array_map('intval', $ids);
                 $this->tour_model->deleteItems($this->map_id, $ids);
             }
-            $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_SUCCESS, 'Erfolgreich gelöscht', true);
+            $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_SUCCESS, $this->plugin->txt('deleted'), true);
         } else {
-            $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_FAILURE, 'Es wurden keine Lernorte ausgewählt.', true);
+            $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_FAILURE, $this->plugin->txt('nothing_selected'), true);
         }
 
         $this->ctrl->redirect($this, self::TOUR_VIEW);
     }
 
+    /**
+     * @return void
+     * @throws ilCtrlException
+     */
     private function showMapSettings(): void
     {
         $this->dic->tabs()->activateTab(self::SHOW_MAP_SETTINGS);
@@ -166,6 +194,10 @@ class ilLearnplacesMapTourGUI
         ]));
     }
 
+    /**
+     * @return void
+     * @throws ilCtrlException
+     */
     private function saveMapSettings(): void
     {
         $form = $this->page_component_service->getMapUpdateForm(
@@ -184,7 +216,7 @@ class ilLearnplacesMapTourGUI
 
         $this->page_component_service->updateMap($this->map_id, $title, $description);
 
-        $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_SUCCESS, 'Erfolgreich aktualisiert', true);
+        $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_SUCCESS, $this->dic->language()->txt('saved_successfully'), true);
         $this->ctrl->redirect($this, self::SHOW_MAP_SETTINGS);
     }
 }

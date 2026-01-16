@@ -1,1 +1,9 @@
 cmd_insert#:#Lernorte Karte einfügen
+learnplaces_map#:#Lernorte Karte
+learnplace#:#Lernort
+reopen_message#:#Bitte öffnen, um die Lernort-Karte zu bearbeiten.
+nothing_selected#:#Es wurden keine Lernorte ausgewählt.
+deleted#:#Erfolgreich gelöscht.
+add_learnplace#:#Lernort hinzufügen
+color#:#Farbe
+tag_name#:#Tag-Name

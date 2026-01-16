@@ -22,6 +22,15 @@ class TableDataRetrieval implements DataRetrieval
     ) {
     }
 
+    /**
+     * @param DataRowBuilder $row_builder
+     * @param array          $visible_column_ids
+     * @param Range          $range
+     * @param Order          $order
+     * @param array|null     $filter_data
+     * @param array|null     $additional_parameters
+     * @return Generator
+     */
     public function getRows(
         DataRowBuilder $row_builder,
         array $visible_column_ids,
@@ -41,7 +50,7 @@ class TableDataRetrieval implements DataRetrieval
 
             $active = $record['active'] ? true : false;
             $color = $record['color'];
-            $color_html = "<div style='width: 30px; height: 30px; border-radius: 50%; background-color: {$color};'></div>";
+            $color_html = "<div style='width: 30px; height: 30px; border-radius: 50%; background-color: $color;'></div>";
 
             yield $row_builder->buildDataRow($tag_name, [
                 'tag_name' => $tag_name,
@@ -52,11 +61,19 @@ class TableDataRetrieval implements DataRetrieval
         }
     }
 
+    /**
+     * @param array|null $filter_data
+     * @param array|null $additional_parameters
+     * @return int|null
+     */
     public function getTotalRowCount(?array $filter_data, ?array $additional_parameters): ?int
     {
         return 0;
     }
 
+    /**
+     * @return array
+     */
     public function getTagsOfLearnplacesInCourse(): array
     {
         $course_ref_id = \ilLearnplacesMapPlugin::getContext();

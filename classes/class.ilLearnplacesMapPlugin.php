@@ -10,6 +10,10 @@ class ilLearnplacesMapPlugin extends ilPageComponentPlugin
 {
     public const PLUGIN_ID = "lmap";
 
+    /**
+     * @param string $a_type
+     * @return bool
+     */
     public function isValidParentType(string $a_type): bool
     {
         if (!\ilObjectPlugin::getPluginObjectByType('xsrl')->isActive()) {
@@ -55,6 +59,20 @@ class ilLearnplacesMapPlugin extends ilPageComponentPlugin
         return $containers[0]['child'];
     }
 
+    /**
+     * Handles the cloning process of a map.
+     *
+     * This method runs during the cloning of an object and manages context-related changes.
+     * It checks for any changes in the context (such as a course or group) and performs
+     * cleanup and updates as needed. If the context has changed, it deletes all tours
+     * and groups associated with the map and updates the reference ID for the new context.
+     *
+     * @param array  $a_properties     Array containing the properties of the object being cloned,
+     *                                 such as the map ID and mode.
+     * @param string $a_plugin_version The version of the plugin being used.
+     * @return void
+     * @throws ilException Throws an exception if no valid context is found.
+     */
     public function onClone(
         array &$a_properties,
         string $a_plugin_version
@@ -84,6 +102,17 @@ class ilLearnplacesMapPlugin extends ilPageComponentPlugin
         }
     }
 
+    /**
+     * Handles the deletion of a map object with optional movement to a new context.
+     *
+     * @param array  $a_properties     Properties of the map, including the ID and mode.
+     * @param string $a_plugin_version The version of the plugin currently in use.
+     * @param bool   $move_operation   Indicates if the operation involves moving the map to a new context.
+     *
+     * @return void
+     * @throws ilException If the context is invalid during a move operation.
+     *
+     */
     public function onDelete(
         array $a_properties,
         string $a_plugin_version,
@@ -123,12 +152,22 @@ class ilLearnplacesMapPlugin extends ilPageComponentPlugin
         $page_component_service->deleteMap($map_id, $mode);
     }
 
+    /**
+     * Retrieves an instance of the TourModel.
+     *
+     * @return TourModel Returns a new instance of the TourModel class.
+     */
     public function getTourModel(): TourModel
     {
         global $DIC;
         return new TourModel($DIC);
     }
 
+    /**
+     * Retrieves an instance of the CollectionModel.
+     *
+     * @return CollectionModel Returns a new instance of the CollectionModel class.
+     */
     public function getCollectionModel(): CollectionModel
     {
         global $DIC;
