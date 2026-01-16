@@ -122,47 +122,15 @@ class TourView
         $tpl = $this->dic->ui()->mainTemplate();
         $tpl->addJavaScript('Customizing/global/plugins/Services/COPage/PageComponent/LearnplacesMap/dist/bundle.js');
 
-        $tour = $this->tour_model->getTourMap($this->map_id);
+        $tour_map_data = $this->tour_model->getTourMap($this->map_id);
 
-        if (!$tour) {
+        if (!$tour_map_data) {
             return ' ';
         }
 
-        $map_data = [
-            'map_id' => $tour['map_id'],
-            "title" => $tour['title'],
-            "description" => $tour['description'],
-            "context_ref_id" => $tour['context_ref_id'],
-        ];
+        $learnplaces_json = json_encode(['learnplaces' => $tour_map_data['tour_learnplaces']], JSON_THROW_ON_ERROR);
 
-        foreach ($tour['tour_learnplaces'] ?? [] as $learnplace_ref_id) {
-            $learnplace_object = $this->learnplace_service->findByObjectId(
-                \ilObject::_lookupObjId($learnplace_ref_id)
-            );
-
-            /** @var Configuration $configuration */
-            $configuration = $learnplace_object->getConfiguration();
-            if (!$configuration->isOnline()) {
-                continue;
-            }
-
-            $map_data['tour_learnplaces'][] = [
-                'id' => $learnplace_object->getId(),
-                "learnplace_ref_id" => $learnplace_ref_id,
-                'title' => \ilObject::_lookupTitle($learnplace_object->getObjectId()),
-                'latitude' => $learnplace_object->getLocation()->getLatitude(),
-                'longitude' => $learnplace_object->getLocation()->getLongitude(),
-                'radius' => $learnplace_object->getLocation()->getRadius(),
-                'visited' => $this->tour_model->isVisited(
-                    $this->dic->user()->getId(), $learnplace_object->getId()
-                ) ? 'true' : 'false',
-                'url' => ILIAS_HTTP_PATH . '/go/xsrl/' . $learnplace_ref_id,
-            ];
-        }
-
-        $learnplaces_json = json_encode(['learnplaces' => $map_data['tour_learnplaces']], JSON_THROW_ON_ERROR);
-
-        $link_list = array_map(fn($item) => "<li><a href='{$item['url']}' target='_self'>{$item['title']}</a></li>", $map_data['tour_learnplaces']);
+        $link_list = array_map(fn($item) => "<li><a href='{$item['url']}' target='_self'>{$item['title']}</a></li>", $tour_map_data['tour_learnplaces']);
         $html_link_list = implode('', $link_list);
 
         $content_html = <<<HTML
@@ -171,7 +139,7 @@ class TourView
             </script>
             <div class="learnplaces-tour-content">
                 <div class="left-column">
-                    <p>{$map_data['description']}</p>
+                    <p>{$tour_map_data['description']}</p>
                     <div class="learnplaces-tour-links">
                         <h3>Lernorte</h3>
                         <ol>
@@ -189,7 +157,7 @@ class TourView
 
         return $this->dic->ui()->renderer()->render(
             $this->dic->ui()->factory()->panel()->standard(
-                $map_data['title'],
+                $tour_map_data['title'],
                 $this->dic->ui()->factory()->legacy($content_html)
             )
         );

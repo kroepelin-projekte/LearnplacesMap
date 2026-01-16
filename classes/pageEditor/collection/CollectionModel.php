@@ -346,8 +346,6 @@ class CollectionModel
 
     public function getCollection(int $map_id): array
     {
-        // todo check assignment: $collection_data['map_id']
-
         $db = $this->dic->database();
         $res = $db->queryF(
             <<<SQL
@@ -361,12 +359,18 @@ class CollectionModel
         );
 
         if (!$row = $db->fetchAssoc($res)) {
-            Response::send(200, null, []);
+            Response::send(400, null, []);
+        }
+
+        $context_ref_id = (int) $row['context_ref_id'];
+
+        if (!$this->dic->rbac()->system()->checkAccess('read', $context_ref_id, \ilObject::_lookupType($context_ref_id, true))) {
+            Response::send(400, null, []);
         }
 
         $collection_data = [
             'map_id' => (int) $row['id'],
-            'context_ref_id' => (int) $row['context_ref_id'],
+            'context_ref_id' => $context_ref_id,
             'title' => $row['title'],
             'description' => nl2br($row['description']),
             'collection_learnplaces' => []

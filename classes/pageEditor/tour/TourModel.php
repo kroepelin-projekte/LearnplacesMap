@@ -12,12 +12,20 @@ use ILIAS\DI\Container;
 use ILIAS\UI\Component\Tree\Tree;
 use ILIAS\UI\URLBuilder;
 use ILIAS\UI\Component\Table\Table;
+use KPG\Learnplaces\persistence\repository\LearnplaceRepository;
+use KPG\Learnplaces\container\PluginContainer;
+use KPG\Learnplaces\persistence\dto\Configuration;
 
 class TourModel
 {
+    private LearnplaceRepository $learnplace_service;
+
     public function __construct(
         protected Container $dic,
     ) {
+
+        /** @var LearnplaceRepository $learnplace_service  */
+        $this->learnplace_service = PluginContainer::resolve(LearnplaceRepository::class);
     }
 
     public function addItem(int $map_id, int $learnplace_ref_id): void
@@ -180,7 +188,6 @@ class TourModel
     public function getTourMapsOfUser(): \Generator
     {
         $db = $this->dic->database();
-
         // Get all crs and grp obj_ids wher user is member
         $assigned_objects = \ilParticipants::_getMembershipByType(
             $this->dic->user()->getId(),
@@ -217,11 +224,6 @@ class TourModel
                 $tour_data = [];
             }
 
-            $learnplace_obj_id = \ilObject::_lookupObjectId($row['learnplace_ref_id']);
-            if (!\ilObject::_exists($learnplace_obj_id)) {
-                continue;
-            }
-
             $current_map_id = $row['id'];
 
             // Collect tour data
@@ -235,7 +237,27 @@ class TourModel
                 ];
             }
 
-            $tour_data['tour_learnplaces'][] = $row['learnplace_ref_id'];
+            $learnplace_obj_id = \ilObject::_lookupObjectId($row['learnplace_ref_id']);
+            if (!\ilObject::_exists($learnplace_obj_id)) {
+                continue;
+            }
+
+            $learnplace_object = $this->learnplace_service->findByObjectId($learnplace_obj_id);
+
+            /** @var Configuration $configuration */
+            $configuration = $learnplace_object->getConfiguration();
+            if (!$configuration->isOnline()) {
+                continue;
+            }
+
+            $tour_data['tour_learnplaces'][] = [
+                'id' => $learnplace_object->getId(),
+                "learnplace_ref_id" => (int) $row['learnplace_ref_id'],
+                'title' => \ilObject::_lookupTitle($learnplace_object->getObjectId()),
+                'latitude' => $learnplace_object->getLocation()->getLatitude(),
+                'longitude' => $learnplace_object->getLocation()->getLongitude(),
+                'radius' => $learnplace_object->getLocation()->getRadius(),
+                'visited' => $this->isVisited($this->dic->user()->getId(), $learnplace_object->getId())            ];
         }
 
         // Return last context
@@ -261,20 +283,47 @@ class TourModel
 
         $tour_data = [];
         while ($row = $db->fetchAssoc($res)) {
+            $context_ref_id = (int) $row['context_ref_id'];
+
+            if (!$this->dic->rbac()->system()->checkAccess('read', $context_ref_id, \ilObject::_lookupType($context_ref_id, true))) {
+                continue;
+            }
+
+            if (empty($tour_data)) {
+                $tour_data = [
+                    'map_id' => (int) $row['id'],
+                    'title' => $row['title'],
+                    'description' => nl2br($row['description']),
+                    'context_ref_id' => (int) $row['context_ref_id'],
+                    'tour_learnplaces' => []
+                ];
+            }
+
             $learnplace_obj_id = \ilObject::_lookupObjectId($row['learnplace_ref_id']);
 
             if (!\ilObject::_exists($learnplace_obj_id)) {
                 continue;
             }
 
-            $tour_data['map_id'] = $row['id'];
-            $tour_data['title'] = $row['title'];
-            $tour_data['description'] = nl2br($row['description']);
-            $tour_data['context_ref_id'] = $row['context_ref_id'];
-            $tour_data['tour_learnplaces'][] = $row['learnplace_ref_id'];
-        }
+            $learnplace_object = $this->learnplace_service->findByObjectId($learnplace_obj_id);
 
-        // todo check assignment: $tour_data['context_ref_id']
+            /** @var Configuration $configuration */
+            $configuration = $learnplace_object->getConfiguration();
+            if (!$configuration->isOnline()) {
+                continue;
+            }
+
+            $tour_data['tour_learnplaces'][] = [
+                'id' => $learnplace_object->getId(),
+                "learnplace_ref_id" => (int) $row['learnplace_ref_id'],
+                'title' => \ilObject::_lookupTitle($learnplace_object->getObjectId()),
+                'latitude' => $learnplace_object->getLocation()->getLatitude(),
+                'longitude' => $learnplace_object->getLocation()->getLongitude(),
+                'radius' => $learnplace_object->getLocation()->getRadius(),
+                'visited' => $this->isVisited($this->dic->user()->getId(), $learnplace_object->getId()),
+                'url' => ILIAS_HTTP_PATH . '/go/xsrl/' . $row['learnplace_ref_id'],
+            ];
+        }
 
         return $tour_data;
     }
