@@ -22,7 +22,7 @@ class RepositoryTreeRecursion implements TreeRecursion
      */
     public function getChildren($record, $environment = null): array
     {
-        return $this->dic->repositoryTree()->getChilds((int) $record['ref_id']);
+        return $this->dic->repositoryTree()->getChildsByTypeFilter((int) $record['ref_id'], ['xsrl', 'cat', 'fold']);
     }
 
     /**
@@ -34,8 +34,15 @@ class RepositoryTreeRecursion implements TreeRecursion
     public function build(Node\Factory $factory, $record, $environment = null): Node\Node
     {
         $ref_id = $record['ref_id'];
-        $label = '<input type="radio" id="' . $ref_id . '" name="learnplace" value="' . $ref_id . '" style="margin-right: 5px;">';
-        $label .= '<label for="' . $ref_id . '">' . $record['title'] . ' (' . $record['type'] . ', ' . $ref_id . ')</label>';
+        $type = $record['type'];
+        $disabled = $environment['tour_model']->itemExists($environment['map_id'], $ref_id) ? 'disabled' : '';
+
+        if ($type === 'xsrl') {
+            $label = '<input type="radio" ' .$disabled . ' id="' . $ref_id . '" name="learnplace" value="' . $ref_id . '" style="margin-right: 5px;">';
+            $label .= '<label for="' . $ref_id . '">' . $record['title'] . ' (' . $record['type'] . ', ' . $ref_id . ')</label>';
+        } else {
+            $label = $record['title'] . ' (' . $record['type'] . ', ' . $ref_id . ')';
+        }
 
         /** @var Node\Node $node */
         $node = $factory->simple($label, null)->withExpanded(true);

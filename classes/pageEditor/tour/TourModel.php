@@ -54,7 +54,7 @@ class TourModel
      * @param int $learnplace_ref_id
      * @return bool
      */
-    private function itemExists(int $map_id, int $learnplace_ref_id): bool
+    public function itemExists(int $map_id, int $learnplace_ref_id): bool
     {
         $sql = $this->dic->database()->queryF(
             <<<SQL
@@ -357,5 +357,35 @@ class TourModel
         }
 
         return $tour_data;
+    }
+
+    /**
+     * @param int $ref_id
+     * @return array
+     */
+    public function recurseTree(int $ref_id): array
+    {
+        $tree = $this->dic->repositoryTree();
+        $node_data = $tree->getNodeData($ref_id);
+
+        if (!$node_data) {
+            return [];
+        }
+
+        $type = $node_data['type'] ?? \ilObject::_lookupType($ref_id, true);
+
+        $children_data = $tree->getChildsByTypeFilter(
+            $ref_id,
+            ['fold', 'cat', 'xsrl']
+        );
+
+        $children = [];
+        foreach ($children_data as $child) {
+            $children[] = $this->recurseTree((int) $child['ref_id']);
+        }
+
+        $node_data['children'] = $children;
+
+        return $node_data;
     }
 }

@@ -108,16 +108,16 @@ class TourView
      */
     public function getRepositoryTree(): Tree
     {
-        $course_ref_id = \ilLearnplacesMapPlugin::getContext();
+        $context_ref_id = \ilLearnplacesMapPlugin::getContext();
 
-        $all_learnplaces_in_course = $this->dic->repositoryTree()->getSubTree(
-            $this->dic->repositoryTree()->getNodeData($course_ref_id),
-            true,
-            ['xsrl']
-        );
+        $tree_data = $this->tour_model->recurseTree($context_ref_id);
 
         return $this->factory->tree()->expandable("Lernorte", new RepositoryTreeRecursion($this->dic))
-            ->withData($all_learnplaces_in_course);
+            ->withData([$tree_data])
+            ->withEnvironment([
+                'map_id' => $this->map_id,
+                'tour_model' => $this->tour_model,
+            ]);
     }
 
     /**

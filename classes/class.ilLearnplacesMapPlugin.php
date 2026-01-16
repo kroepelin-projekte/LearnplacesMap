@@ -48,14 +48,14 @@ class ilLearnplacesMapPlugin extends ilPageComponentPlugin
             return false;
         }
 
-        // Course context
+        // Group context
         foreach ($containers as $node) {
-            if ($node['type'] === 'crs') {
+            if ($node['type'] === 'grp') {
                 return $node['child'];
             }
         }
 
-        // Group context
+        // Course context
         return $containers[0]['child'];
     }
 
