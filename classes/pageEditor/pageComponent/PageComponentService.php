@@ -82,7 +82,7 @@ class PageComponentService
 
         $db = $this->dic->database();
         $sql = $db->queryF(
-            'SELECT title, description, context_ref_id FROM kpg_lmap_map WHERE id = %s',
+            'SELECT mode, title, description, context_ref_id FROM kpg_lmap_map WHERE id = %s',
             [
                 'integer',
             ],
@@ -92,6 +92,7 @@ class PageComponentService
         );
         $map = $db->fetchObject($sql);
         return [
+            'mode' => $map->mode,
             'title' => $map->title,
             'description' => $map->description,
             'context_ref_id' => (int) $map->context_ref_id,
@@ -100,21 +101,21 @@ class PageComponentService
 
     /**
      * @param int $map_id
-     * @param int $course_ref_id
+     * @param int $context_ref_id
      * @return void
      */
-    public function updateCourseRefId(int $map_id, int $course_ref_id): void
+    public function updateContextRefId(int $map_id, int $context_ref_id): void
     {
         $this->dic->database()->manipulateF(
             <<<SQL
-            UPDATE kpg_lmap_map SET course_ref_id = %s WHERE id = %s
+            UPDATE kpg_lmap_map SET context_ref_id = %s WHERE id = %s
             SQL,
             [
                 'integer',
                 'integer',
             ],
             [
-                $course_ref_id,
+                $context_ref_id,
                 $map_id,
             ]
         );

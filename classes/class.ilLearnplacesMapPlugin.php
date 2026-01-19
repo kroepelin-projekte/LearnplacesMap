@@ -88,17 +88,32 @@ class ilLearnplacesMapPlugin extends ilPageComponentPlugin
             throw new ilException('No valid context');
         }
 
-        $context_ref_id = $page_component_service->getInfo($map_id)['context_ref_id'];
+        $map_data = $page_component_service->getInfo($map_id);
+        $mode = $map_data['mode'];
+        $title = $map_data['title'];
+        $description = $map_data['description'];
+        $context_ref_id = $map_data['context_ref_id'];
 
-        // Context has changed, delete all tours associated with this map
-        if ($context_ref_id !== $new_context_ref_id) {
-            $tour_model = new TourModel($DIC);
-            $tour_model->deleteAllItems($map_id);
+        // Copy
+        $new_map_id = $page_component_service->addMap($mode, $title, $description);
+        $a_properties['id'] = (string) $new_map_id;
 
-            $collection_model = new CollectionModel($DIC);
-            $collection_model->deleteAllGroups($map_id);
+        // Context is the same
+        if ($context_ref_id === $new_context_ref_id) {
 
-            $page_component_service->updateCourseRefId($map_id, $new_context_ref_id);
+            if ($mode === 'tour') {
+                $tour_model = new TourModel($DIC);
+                $tour_learnplaces = $tour_model->getTourMap($map_id)['tour_learnplaces'];
+                foreach ($tour_learnplaces as $tour_learnplace) {
+                    $tour_model->addItem($new_map_id, (int) $tour_learnplace['learnplace_ref_id']);
+                }
+            } else {
+                $collection_model = new CollectionModel($DIC);
+                $tags = $collection_model->getTags($map_id);
+                foreach ($tags as $tag) {
+                    $collection_model->storeGroup($new_map_id, $tag['tag_name'], $tag['active'], $tag['color']);
+                }
+            }
         }
     }
 

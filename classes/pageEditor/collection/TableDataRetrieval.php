@@ -76,9 +76,9 @@ class TableDataRetrieval implements DataRetrieval
      */
     public function getTagsOfLearnplacesInCourse(): array
     {
-        $course_ref_id = \ilLearnplacesMapPlugin::getContext();
+        $context_ref_id = \ilLearnplacesMapPlugin::getContext();
         $all_learnplaces_in_course = $this->dic->repositoryTree()->getSubTree(
-            $this->dic->repositoryTree()->getNodeData($course_ref_id),
+            $this->dic->repositoryTree()->getNodeData($context_ref_id),
             false,
             ['xsrl']
         );

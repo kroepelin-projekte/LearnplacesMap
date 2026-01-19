@@ -440,4 +440,27 @@ class CollectionModel
 
         return $collection_data;
     }
+
+    public function getTags(int $map_id): array
+    {
+        $db = $this->dic->database();
+        $res = $db->queryF(
+            <<<SQL
+            SELECT map_id, tag_name, active, color
+            FROM kpg_lmap_collection
+            WHERE active = 1 AND map_id = %s
+            SQL,
+            ['integer'],
+            [$map_id]
+        );
+        $tag_names = [];
+        while ($row = $db->fetchAssoc($res)) {
+            $tag_names[] = [
+                'tag_name' => $row['tag_name'],
+                'active' => (bool) $row['active'],
+                'color' => $row['color'],
+            ];
+        }
+        return $tag_names;
+    }
 }
