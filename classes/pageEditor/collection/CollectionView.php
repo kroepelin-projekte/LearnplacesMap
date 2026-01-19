@@ -108,7 +108,6 @@ class CollectionView
 
     /**
      * @return string
-     * @throws \ILIAS\HTTP\Response\Sender\ResponseSendingException
      */
     public function getMap(): string
     {
@@ -118,6 +117,10 @@ class CollectionView
         $tour_model = new TourModel($this->dic);
 
         $collection_data = $collection_model->getCollection($this->map_id);
+        if ($collection_data === null) {
+            return ' ';
+        }
+
         $learnplaces_list = $collection_data['collection_learnplaces'];
 
         $list_html = $this->groupedLearnplacesHtml($learnplaces_list);

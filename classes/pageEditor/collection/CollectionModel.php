@@ -23,7 +23,6 @@ use KPG\Learnplaces\persistence\dto\Configuration;
 use ilObject;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourModel;
 use KPG\Learnplaces\persistence\dto\Location;
-use RepositoryObject\Learnplaces\classes\api\Core\Response;
 
 class CollectionModel
 {
@@ -379,10 +378,9 @@ class CollectionModel
 
     /**
      * @param int $map_id
-     * @return array
-     * @throws \ILIAS\HTTP\Response\Sender\ResponseSendingException
+     * @return array|null
      */
-    public function getCollection(int $map_id): array
+    public function getCollection(int $map_id): ?array
     {
         $db = $this->dic->database();
         $res = $db->queryF(
@@ -397,13 +395,13 @@ class CollectionModel
         );
 
         if (!$row = $db->fetchAssoc($res)) {
-            Response::send(400, null, []);
+            return null;
         }
 
         $context_ref_id = (int) $row['context_ref_id'];
 
         if (!$this->dic->rbac()->system()->checkAccess('read', $context_ref_id, \ilObject::_lookupType($context_ref_id, true))) {
-            Response::send(400, null, []);
+            return null;
         }
 
         $collection_data = [
