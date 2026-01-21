@@ -137,7 +137,9 @@ class TourView
         $learnplaces_json = json_encode(['learnplaces' => $tour_map_data['tour_learnplaces']], JSON_THROW_ON_ERROR);
 
         $link_list = array_map(fn($item) => "<li><a href='{$item['url']}' target='_self'>{$item['title']}</a></li>", $tour_map_data['tour_learnplaces']);
-        $html_link_list = implode('', $link_list);
+        $html_link_list = '<ol>' . implode('', $link_list) . '</ol>';
+
+        $popover_html = $this->learnplacesListPopover($html_link_list);
 
         $content_html = <<<HTML
             <script type="application/json" data-learnplaces-tour="learnplaces-tour-$this->map_id">
@@ -147,10 +149,7 @@ class TourView
                 <div class="left-column">
                     <p>{$tour_map_data['description']}</p>
                     <div class="learnplaces-tour-links">
-                        <h3>{$this->plugin->txt('learnplace')}</h3>
-                        <ol>
-                            $html_link_list
-                        </ol>
+                        $popover_html
                     </div>
                 </div>
                 <div class="right-colums">
@@ -167,5 +166,19 @@ class TourView
                 $this->dic->ui()->factory()->legacy($content_html)
             )
         );
+    }
+
+    /**
+     * @param string $content
+     * @return string
+     */
+    private function learnplacesListPopover(string $content): string
+    {
+        $card = $this->factory->card()->standard('')->withSections(array($this->factory->legacy($content)));
+        $popover = $this->factory->popover()->standard($card)->withTitle($this->plugin->txt('learnplaces'));
+        $button = $this->factory->button()->standard($this->plugin->txt('show_learnplaces_button'), '#')
+                                ->withOnClick($popover->getShowSignal());
+
+        return $this->dic->ui()->renderer()->render([$popover, $button]);
     }
 }

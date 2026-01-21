@@ -124,11 +124,9 @@ class CollectionView
         $learnplaces_list = $collection_data['collection_learnplaces'];
 
         $list_html = $this->groupedLearnplacesHtml($learnplaces_list);
+        $popover_html = $this->learnplacesListPopover($list_html);
 
         $learnplaces_json = json_encode(['learnplaces' => $learnplaces_list], JSON_THROW_ON_ERROR);
-
-        $link_list = array_map(fn($item) => "<li><a href='{$item['url']}'>{$item['title']}</a></li>", $learnplaces_list);
-        $html_link_list = implode('', $link_list);
 
         $content_html = <<<HTML
             <script type="application/json" data-learnplaces-collection="learnplaces-collection-$this->map_id">
@@ -138,8 +136,7 @@ class CollectionView
                 <div class="left-column">
                     <p>{$collection_data['description']}</p>
                     <div class="learnplaces-collection-links">
-                        <h3>{$this->plugin->txt('learnplace')}</h3>
-                        $list_html
+                        $popover_html
                     </div>
                 </div>
                 <div class="right-colums">
@@ -172,6 +169,9 @@ class CollectionView
             }
         }
 
+        // Tags (Keys) alphabetisch sortieren
+        ksort($grouped_learnplaces, SORT_NATURAL | SORT_FLAG_CASE);
+
         $html = '<div class="learnplaces-grouped-list">';
 
         foreach ($grouped_learnplaces as $tag_name => $group) {
@@ -193,5 +193,19 @@ class CollectionView
         $html .= '</div>';
 
         return $html;
+    }
+
+    /**
+     * @param string $content
+     * @return string
+     */
+    private function learnplacesListPopover(string $content): string
+    {
+        $card = $this->factory->card()->standard('')->withSections(array($this->factory->legacy($content)));
+        $popover = $this->factory->popover()->standard($card)->withTitle($this->plugin->txt('learnplaces'));
+        $button = $this->factory->button()->standard($this->plugin->txt('show_learnplaces_button'), '#')
+                          ->withOnClick($popover->getShowSignal());
+
+        return $this->dic->ui()->renderer()->render([$popover, $button]);
     }
 }
