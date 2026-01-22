@@ -42,6 +42,9 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
         $this->mode_service = new PageComponentService($DIC, $this->factory);
     }
 
+    /**
+     * @throws ilCtrlException
+     */
     public function executeCommand(): void
     {
         // Redirect if Learnplaces plugin is not active
@@ -216,11 +219,11 @@ class ilLearnplacesMapPluginGUI extends ilPageComponentPluginGUI
     private function getPlaceholderHtml(): string
     {
         return <<<HTML
-                <div class="learnplaces-map-placeholder">
-                    <div class="placeholder-text">
-                        {$this->plugin->txt('reopen_message')}
-                    </div>
+            <div class="learnplaces-map-placeholder">
+                <div class="placeholder-text">
+                    {$this->plugin->txt('reopen_message')}
                 </div>
-                HTML;
+            </div>
+            HTML;
     }
 }

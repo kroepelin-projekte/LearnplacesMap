@@ -4,24 +4,13 @@ declare(strict_types=1);
 
 namespace Kpg\Plugins\LearnplacesMap\PageEditor\Collection;
 
-use ILIAS\UI\Component\Input\Container\Form\Standard;
 use ILIAS\UI\Factory;
 use ILIAS\Data\URI;
 use ILIAS\DI\Container;
-use ILIAS\UI\Component\Tree\Tree;
 use ILIAS\UI\URLBuilder;
-use KPG\Learnplaces\container\PluginContainer;
-use KPG\Learnplaces\persistence\repository\LearnplaceRepository;
-use ILIAS\UI\Component\Table\DataRetrieval;
-use ILIAS\UI\Component\Table\DataRowBuilder;
-use ILIAS\Data\Range;
-use ILIAS\Data\Order;
 use ilLearnplacesMapCollectionGUI;
 use ILIAS\UI\Component\Modal\Modal;
 use ILIAS\UI\Component\Table\Table;
-use ILIAS\FileUpload\MimeType;
-use ILIAS\UI\Component\Legacy\Legacy;
-use KPG\Learnplaces\persistence\dto\Location;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourModel;
 
 class CollectionView
@@ -108,13 +97,13 @@ class CollectionView
 
     /**
      * @return string
+     * @throws \JsonException
      */
     public function getMap(): string
     {
         $tpl = $this->dic->ui()->mainTemplate();
         $tpl->addJavaScript('Customizing/global/plugins/Services/COPage/PageComponent/LearnplacesMap/dist/bundle.js');
         $collection_model = new CollectionModel($this->dic);
-        $tour_model = new TourModel($this->dic);
 
         $collection_data = $collection_model->getCollection($this->map_id);
         if ($collection_data === null) {
@@ -204,7 +193,7 @@ class CollectionView
         $card = $this->factory->card()->standard('')->withSections(array($this->factory->legacy($content)));
         $popover = $this->factory->popover()->standard($card)->withTitle($this->plugin->txt('learnplaces'));
         $button = $this->factory->button()->standard($this->plugin->txt('show_learnplaces_button'), '#')
-                          ->withOnClick($popover->getShowSignal());
+            ->withOnClick($popover->getShowSignal());
 
         return $this->dic->ui()->renderer()->render([$popover, $button]);
     }

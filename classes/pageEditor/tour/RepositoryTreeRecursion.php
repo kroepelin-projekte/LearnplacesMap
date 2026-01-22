@@ -38,15 +38,12 @@ class RepositoryTreeRecursion implements TreeRecursion
         $disabled = $environment['tour_model']->itemExists($environment['map_id'], $ref_id) ? 'disabled' : '';
 
         if ($type === 'xsrl') {
-            $label = '<input type="radio" ' .$disabled . ' id="' . $ref_id . '" name="learnplace" value="' . $ref_id . '" style="margin-right: 5px;">';
+            $label = '<input type="radio" ' . $disabled . ' id="' . $ref_id . '" name="learnplace" value="' . $ref_id . '" style="margin-right: 5px;">';
             $label .= '<label for="' . $ref_id . '">' . $record['title'] . ' (' . $record['type'] . ', ' . $ref_id . ')</label>';
         } else {
             $label = $record['title'] . ' (' . $record['type'] . ', ' . $ref_id . ')';
         }
 
-        /** @var Node\Node $node */
-        $node = $factory->simple($label, null)->withExpanded(true);
-
-        return $node;
+        return $factory->simple($label)->withExpanded(true);
     }
 }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace Kpg\Plugins\LearnplacesMap\PageEditor\Tour;
 
-use ILIAS\UI\Component\Input\Container\Form\Standard;
 use ILIAS\UI\Factory;
 use ILIAS\UI\Component\Component;
 use ILIAS\Data\URI;
@@ -12,9 +11,8 @@ use ILIAS\DI\Container;
 use ILIAS\UI\Component\Tree\Tree;
 use ILIAS\UI\URLBuilder;
 use ILIAS\UI\Component\Table\Table;
-use KPG\Learnplaces\persistence\dto\Configuration;
-use KPG\Learnplaces\persistence\repository\LearnplaceRepository;
-use KPG\Learnplaces\container\PluginContainer;
+use ilCtrlException;
+use ilLearnplacesMapTourGUI;
 
 class TourView
 {
@@ -33,8 +31,8 @@ class TourView
     }
 
     /**
-     * @param string $action
      * @return array{button: Component, modal: Component}
+     * @throws ilCtrlException
      */
     public function addItemModal(): array
     {
@@ -43,8 +41,7 @@ class TourView
             $this->getRepositoryTree(),
             [
                 'ref_id' => $this->factory->input()->field()->hidden()->withAdditionalOnLoadCode(
-                    fn (string $id): string =>
-                        <<<JS
+                    fn(string $id): string => <<<JS
                         const hidden_input = document.getElementById('$id');
                         document.addEventListener('change', (e) => {
                             if (e.target.matches('input[name="learnplace"]')) {
@@ -54,10 +51,15 @@ class TourView
                         JS
                 )
             ],
-            $this->dic->ctrl()->getLinkTargetByClass(\ilLearnplacesMapTourGUI::class, \ilLearnplacesMapTourGUI::TOUR_ADD_ITEM),
+            $this->dic->ctrl()->getLinkTargetByClass(
+                ilLearnplacesMapTourGUI::class,
+                ilLearnplacesMapTourGUI::TOUR_ADD_ITEM
+            ),
         )->withCancelButtonLabel($this->dic->language()->txt('close'));
 
-        $button = $this->factory->button()->standard($this->plugin->txt('add_learnplace'), '#')->withonClick($modal->getShowSignal());
+        $button = $this->factory->button()->standard($this->plugin->txt('add_learnplace'), '#')->withonClick(
+            $modal->getShowSignal()
+        );
 
         return [
             'button' => $button,
@@ -67,14 +69,17 @@ class TourView
 
     /**
      * @return Table
-     * @throws \ilCtrlException
+     * @throws ilCtrlException
      */
     public function getTable(): Table
     {
         $this->dic->ui()->mainTemplate()->addInlineCss('.c-table-data__positioninput label { display: none; }');
 
         // Sammelaktionen -> löschen
-        $url = $this->dic->ctrl()->getLinkTargetByClass(\ilLearnplacesMapTourGUI::class, \ilLearnplacesMapTourGUI::TOUR_DELETE_ITEM);
+        $url = $this->dic->ctrl()->getLinkTargetByClass(
+            ilLearnplacesMapTourGUI::class,
+            ilLearnplacesMapTourGUI::TOUR_DELETE_ITEM
+        );
         $url_builder = new URLBuilder(new URI(ILIAS_HTTP_PATH . '/' . $url));
         list($url_builder, $action_parameter_token, $row_id_token) = $url_builder->acquireParameters(
             ['delete'],
@@ -87,7 +92,10 @@ class TourView
             $row_id_token
         );
 
-        $url = $this->dic->ctrl()->getLinkTargetByClass(\ilLearnplacesMapTourGUI::class, \ilLearnplacesMapTourGUI::TOUR_SAVE_ORDER);
+        $url = $this->dic->ctrl()->getLinkTargetByClass(
+            ilLearnplacesMapTourGUI::class,
+            ilLearnplacesMapTourGUI::TOUR_SAVE_ORDER
+        );
         $target = new URI(ILIAS_HTTP_PATH . '/' . $url);
 
         return $this->factory->table()->ordering(
@@ -122,6 +130,7 @@ class TourView
 
     /**
      * @return string
+     * @throws \JsonException
      */
     public function getMap(): string
     {
@@ -136,7 +145,10 @@ class TourView
 
         $learnplaces_json = json_encode(['learnplaces' => $tour_map_data['tour_learnplaces']], JSON_THROW_ON_ERROR);
 
-        $link_list = array_map(fn($item) => "<li><a href='{$item['url']}' target='_self'>{$item['title']}</a></li>", $tour_map_data['tour_learnplaces']);
+        $link_list = array_map(
+            fn($item) => "<li><a href='{$item['url']}' target='_self'>{$item['title']}</a></li>",
+            $tour_map_data['tour_learnplaces']
+        );
         $html_link_list = '<ol>' . implode('', $link_list) . '</ol>';
 
         $popover_html = $this->learnplacesListPopover($html_link_list);
@@ -177,7 +189,7 @@ class TourView
         $card = $this->factory->card()->standard('')->withSections(array($this->factory->legacy($content)));
         $popover = $this->factory->popover()->standard($card)->withTitle($this->plugin->txt('learnplaces'));
         $button = $this->factory->button()->standard($this->plugin->txt('show_learnplaces_button'), '#')
-                                ->withOnClick($popover->getShowSignal());
+            ->withOnClick($popover->getShowSignal());
 
         return $this->dic->ui()->renderer()->render([$popover, $button]);
     }

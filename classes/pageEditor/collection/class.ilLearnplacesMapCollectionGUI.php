@@ -7,6 +7,10 @@ use Kpg\Plugins\LearnplacesMap\PageEditor\Collection\CollectionView;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Collection\CollectionModel;
 use Kpg\Plugins\LearnplacesMap\PageEditor\PageComponent\PageComponentService;
 use JetBrains\PhpStorm\NoReturn;
+use ILIAS\UI\Factory;
+use ILIAS\UI\Renderer;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\RequestInterface;
 
 /**
  * @ilCtrl_IsCalledBy ilLearnplacesMapCollectionGUI: ilLearnplacesMapPluginGUI
@@ -20,20 +24,19 @@ class ilLearnplacesMapCollectionGUI
     public const SAVE_MAP_SETTINGS = 'saveMapSettings';
 
     private ilCtrlInterface $ctrl;
-    private \ILIAS\UI\Factory $factory;
-    private \ILIAS\UI\Renderer $renderer;
+    private Factory $factory;
+    private Renderer $renderer;
     private ilGlobalTemplateInterface $tpl;
     private Container $dic;
     private CollectionView $collection_view;
     private CollectionModel $collection_model;
     private PageComponentService $page_component_service;
     private int $map_id;
-    private \Psr\Http\Message\ServerRequestInterface|\Psr\Http\Message\RequestInterface $request;
+    private ServerRequestInterface|RequestInterface $request;
 
     public function __construct(
         protected ilLearnplacesMapPluginGUI $parent_gui,
-    )
-    {
+    ) {
         global $DIC;
         $this->dic = $DIC;
         $this->tpl = $DIC->ui()->mainTemplate();
@@ -81,7 +84,7 @@ class ilLearnplacesMapCollectionGUI
         );
 
         $this->dic->tabs()->addTab(
-        self::SHOW_MAP_SETTINGS,
+            self::SHOW_MAP_SETTINGS,
             $this->dic->language()->txt('settings'),
             $this->ctrl->getLinkTarget($this, self::SHOW_MAP_SETTINGS),
         );
@@ -89,6 +92,7 @@ class ilLearnplacesMapCollectionGUI
 
     /**
      * @return void
+     * @throws ilCtrlException|JsonException
      */
     private function collectionView(): void
     {
@@ -103,6 +107,7 @@ class ilLearnplacesMapCollectionGUI
 
     /**
      * Async modal endpoint
+     * @throws ilCtrlException
      */
     #[NoReturn]
     private function collectionEditGroupModal(): void
@@ -111,6 +116,9 @@ class ilLearnplacesMapCollectionGUI
         exit($this->renderer->renderAsync($modal));
     }
 
+    /**
+     * @throws ilCtrlException
+     */
     private function collectionSaveGroup(): void
     {
         $modal = $this->collection_view->getEditModal()->withRequest($this->request);
@@ -136,7 +144,10 @@ class ilLearnplacesMapCollectionGUI
 
         $edit_collection_form = $this->page_component_service->getMapUpdateForm(
             $this->map_id,
-            $this->dic->ctrl()->getFormActionByClass(\ilLearnplacesMapCollectionGUI::class, \ilLearnplacesMapCollectionGUI::SAVE_MAP_SETTINGS),
+            $this->dic->ctrl()->getFormActionByClass(
+                \ilLearnplacesMapCollectionGUI::class,
+                \ilLearnplacesMapCollectionGUI::SAVE_MAP_SETTINGS
+            ),
         );
 
         $this->tpl->setContent($this->renderer->render([

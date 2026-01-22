@@ -6,6 +6,11 @@ use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourView;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourModel;
 use ILIAS\DI\Container;
 use Kpg\Plugins\LearnplacesMap\PageEditor\PageComponent\PageComponentService;
+use ILIAS\UI\Factory;
+use ILIAS\UI\Renderer;
+use Psr\Http\Message\ServerRequestInterface;
+use Psr\Http\Message\RequestInterface;
+use ILIAS\HTTP\Services;
 
 /**
  * @ilCtrl_IsCalledBy ilLearnplacesMapTourGUI: ilLearnplacesMapPluginGUI
@@ -20,11 +25,11 @@ class ilLearnplacesMapTourGUI
     public const SAVE_MAP_SETTINGS = 'saveMapSettings';
 
     private ilCtrlInterface $ctrl;
-    private \ILIAS\UI\Factory $factory;
-    private \ILIAS\UI\Renderer $renderer;
+    private Factory $factory;
+    private Renderer $renderer;
     private ilGlobalTemplateInterface $tpl;
-    private \Psr\Http\Message\ServerRequestInterface|\Psr\Http\Message\RequestInterface $request;
-    private \ILIAS\HTTP\Services $http;
+    private ServerRequestInterface|RequestInterface $request;
+    private Services $http;
     private \ILIAS\Refinery\Factory $refinery;
     private Container $dic;
     private int $map_id;
@@ -35,8 +40,7 @@ class ilLearnplacesMapTourGUI
 
     public function __construct(
         protected ilLearnplacesMapPluginGUI $parent_gui,
-    )
-    {
+    ) {
         global $DIC;
         $this->dic = $DIC;
         $this->refinery = $DIC->refinery();
@@ -95,6 +99,8 @@ class ilLearnplacesMapTourGUI
 
     /**
      * @return void
+     * @throws JsonException
+     * @throws ilCtrlException
      */
     private function tourView(): void
     {
@@ -111,7 +117,8 @@ class ilLearnplacesMapTourGUI
                 $modal_and_button['button'],
                 $this->factory->divider()->horizontal(),
                 $this->tour_view->getTable(),
-        ]));
+            ])
+        );
     }
 
     /**
@@ -143,7 +150,11 @@ class ilLearnplacesMapTourGUI
         $form_data = $modal->getForm()->withRequest($this->request)->getData();
         $ref_id = ((int) $form_data['ref_id']) ?? null;
         if (!$ref_id) {
-            $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_FAILURE, $this->plugin->txt('nothing_selected'), true);
+            $this->tpl->setOnScreenMessage(
+                $this->tpl::MESSAGE_TYPE_FAILURE,
+                $this->plugin->txt('nothing_selected'),
+                true
+            );
             $this->ctrl->redirect($this, self::TOUR_VIEW);
         }
 
@@ -160,7 +171,10 @@ class ilLearnplacesMapTourGUI
     {
         $query = $this->http->wrapper()->query();
         if ($query->has('delete_ids')) {
-            $ids = $query->retrieve('delete_ids', $this->refinery->kindlyTo()->listOf($this->refinery->kindlyTo()->string()));
+            $ids = $query->retrieve(
+                'delete_ids',
+                $this->refinery->kindlyTo()->listOf($this->refinery->kindlyTo()->string())
+            );
 
             if (($ids[0] ?? null) === 'ALL_OBJECTS') {
                 $this->tour_model->deleteAllItems($this->map_id);
@@ -170,7 +184,11 @@ class ilLearnplacesMapTourGUI
             }
             $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_SUCCESS, $this->plugin->txt('deleted'), true);
         } else {
-            $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_FAILURE, $this->plugin->txt('nothing_selected'), true);
+            $this->tpl->setOnScreenMessage(
+                $this->tpl::MESSAGE_TYPE_FAILURE,
+                $this->plugin->txt('nothing_selected'),
+                true
+            );
         }
 
         $this->ctrl->redirect($this, self::TOUR_VIEW);
@@ -186,7 +204,10 @@ class ilLearnplacesMapTourGUI
 
         $edit_tour_form = $this->page_component_service->getMapUpdateForm(
             $this->map_id,
-            $this->dic->ctrl()->getFormActionByClass(\ilLearnplacesMapTourGUI::class, \ilLearnplacesMapTourGUI::SAVE_MAP_SETTINGS),
+            $this->dic->ctrl()->getFormActionByClass(
+                \ilLearnplacesMapTourGUI::class,
+                \ilLearnplacesMapTourGUI::SAVE_MAP_SETTINGS
+            ),
         );
 
         $this->tpl->setContent($this->renderer->render([
@@ -216,7 +237,11 @@ class ilLearnplacesMapTourGUI
 
         $this->page_component_service->updateMap($this->map_id, $title, $description);
 
-        $this->tpl->setOnScreenMessage($this->tpl::MESSAGE_TYPE_SUCCESS, $this->dic->language()->txt('saved_successfully'), true);
+        $this->tpl->setOnScreenMessage(
+            $this->tpl::MESSAGE_TYPE_SUCCESS,
+            $this->dic->language()->txt('saved_successfully'),
+            true
+        );
         $this->ctrl->redirect($this, self::SHOW_MAP_SETTINGS);
     }
 }

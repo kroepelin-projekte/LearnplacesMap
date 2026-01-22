@@ -4,21 +4,9 @@ declare(strict_types=1);
 
 namespace Kpg\Plugins\LearnplacesMap\PageEditor\Collection;
 
-use ILIAS\UI\Component\Input\Container\Form\Standard;
-use ILIAS\UI\Factory;
-use ILIAS\Data\URI;
 use ILIAS\DI\Container;
-use ILIAS\UI\Component\Tree\Tree;
-use ILIAS\UI\URLBuilder;
 use KPG\Learnplaces\container\PluginContainer;
 use KPG\Learnplaces\persistence\repository\LearnplaceRepository;
-use ILIAS\UI\Component\Table\DataRetrieval;
-use ILIAS\UI\Component\Table\DataRowBuilder;
-use ILIAS\Data\Range;
-use ILIAS\Data\Order;
-use ilLearnplacesMapCollectionGUI;
-use ILIAS\UI\Component\Modal\Modal;
-use ILIAS\UI\Component\Table\Table;
 use KPG\Learnplaces\persistence\dto\Configuration;
 use ilObject;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourModel;
@@ -31,7 +19,7 @@ class CollectionModel
     public function __construct(
         protected Container $dic,
     ) {
-        /** @var LearnplaceRepository $learnplace_service  */
+        /** @var LearnplaceRepository $learnplace_service */
         $this->learnplace_service = PluginContainer::resolve(LearnplaceRepository::class);
     }
 
@@ -68,10 +56,10 @@ class CollectionModel
                 'integer',
                 'text',
             ],
-             [
-                 $map_id,
-                 $tag_name,
-             ]
+            [
+                $map_id,
+                $tag_name,
+            ]
         );
     }
 
@@ -250,7 +238,11 @@ class CollectionModel
             $tag_name = $row['tag_name'];
             $color = $row['color'];
 
-            $learnplaces = $this->dic->repositoryTree()->getSubTree($this->dic->repositoryTree()->getNodeData($context_ref_id), false, ['xsrl']);
+            $learnplaces = $this->dic->repositoryTree()->getSubTree(
+                $this->dic->repositoryTree()->getNodeData($context_ref_id),
+                false,
+                ['xsrl']
+            );
 
             foreach ($learnplaces as $learnplace_ref_id) {
                 $obj_id = ilObject::_lookupObjectId($learnplace_ref_id);
@@ -400,7 +392,11 @@ class CollectionModel
 
         $context_ref_id = (int) $row['context_ref_id'];
 
-        if (!$this->dic->rbac()->system()->checkAccess('read', $context_ref_id, \ilObject::_lookupType($context_ref_id, true))) {
+        if (!$this->dic->rbac()->system()->checkAccess(
+            'read',
+            $context_ref_id,
+            \ilObject::_lookupType($context_ref_id, true)
+        )) {
             return null;
         }
 

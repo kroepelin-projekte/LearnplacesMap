@@ -7,6 +7,7 @@ namespace Kpg\Plugins\LearnplacesMap\PageEditor\Tour;
 use ILIAS\UI\Component\Table\OrderingBinding;
 use ILIAS\UI\Component\Table\OrderingRowBuilder;
 use ilObject;
+use Generator;
 
 class TableDataRetrieval implements OrderingBinding
 {
@@ -18,9 +19,9 @@ class TableDataRetrieval implements OrderingBinding
     /**
      * @param OrderingRowBuilder $row_builder
      * @param array              $visible_column_ids
-     * @return \Generator
+     * @return Generator
      */
-    public function getRows(OrderingRowBuilder $row_builder, array $visible_column_ids): \Generator
+    public function getRows(OrderingRowBuilder $row_builder, array $visible_column_ids): Generator
     {
         global $DIC;
         $db = $DIC->database();

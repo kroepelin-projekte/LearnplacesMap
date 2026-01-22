@@ -1,7 +1,7 @@
 <?php
 
 $id = "lmap";
-$version = "1.0.0";
+$version = "2.0.0";
 
-$ilias_min_version = "9.0";
-$ilias_max_version = "9.999";
+$ilias_min_version = "10.0";
+$ilias_max_version = "10.999";

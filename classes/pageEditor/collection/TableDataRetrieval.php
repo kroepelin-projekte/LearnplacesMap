@@ -12,7 +12,6 @@ use Generator;
 use ILIAS\DI\Container;
 use KPG\Learnplaces\container\PluginContainer;
 use KPG\Learnplaces\persistence\repository\LearnplaceRepository;
-use ILIAS\FileUpload\MimeType;
 
 class TableDataRetrieval implements DataRetrieval
 {
@@ -52,10 +51,12 @@ class TableDataRetrieval implements DataRetrieval
             $color = $record['color'];
             $color_html = "<div style='width: 30px; height: 30px; border-radius: 50%; background-color: $color;'></div>";
 
-            yield $row_builder->buildDataRow($tag_name, [
-                'tag_name' => $tag_name,
-                'active' => $active,
-                'color' => $color_html,
+            yield $row_builder->buildDataRow(
+                $tag_name,
+                [
+                    'tag_name' => $tag_name,
+                    'active' => $active,
+                    'color' => $color_html,
                 ]
             );
         }
@@ -102,7 +103,6 @@ class TableDataRetrieval implements DataRetrieval
         $array_tags = trim($learn_place_config->getTags(), ',');
         $array_tags = explode(',', $array_tags);
         $array_tags = array_map('trim', $array_tags);
-        $array_tags = array_filter($array_tags);
-        return $array_tags;
+        return array_filter($array_tags);
     }
 }

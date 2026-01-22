@@ -4,14 +4,7 @@ declare(strict_types=1);
 
 namespace Kpg\Plugins\LearnplacesMap\PageEditor\Tour;
 
-use ILIAS\UI\Component\Input\Container\Form\Standard;
-use ILIAS\UI\Factory;
-use ILIAS\UI\Component\Component;
-use ILIAS\Data\URI;
 use ILIAS\DI\Container;
-use ILIAS\UI\Component\Tree\Tree;
-use ILIAS\UI\URLBuilder;
-use ILIAS\UI\Component\Table\Table;
 use KPG\Learnplaces\persistence\repository\LearnplaceRepository;
 use KPG\Learnplaces\container\PluginContainer;
 use KPG\Learnplaces\persistence\dto\Configuration;
@@ -371,8 +364,6 @@ class TourModel
         if (!$node_data) {
             return [];
         }
-
-        $type = $node_data['type'] ?? \ilObject::_lookupType($ref_id, true);
 
         $children_data = $tree->getChildsByTypeFilter(
             $ref_id,

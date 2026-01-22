@@ -7,8 +7,6 @@ namespace Kpg\Plugins\LearnplacesMap\PageEditor\PageComponent;
 use ILIAS\UI\Component\Input\Container\Form\Standard;
 use ILIAS\UI\Factory;
 use ILIAS\DI\Container;
-use ilLearnplacesMapPluginGUI;
-use ilObject;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourModel;
 use Kpg\Plugins\LearnplacesMap\PageEditor\Collection\CollectionModel;
 
