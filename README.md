@@ -26,7 +26,7 @@ Es stehen zwei Kartentypen zur Auswahl: Tour und Sammlung.
 ### 🏷️ Compatibility
 | Plugin Branches | ILIAS Versions | PHP Versions |
 |-----------------|----------------|--------------|
-| main            | 9              | 8.2          |
+| release_9       | 9              | 8.2          |
 
 ## 📦 Installation
 
