@@ -426,7 +426,7 @@ class CollectionModel
                 'latitude' => $location->getLatitude(),
                 'longitude' => $location->getLongitude(),
                 'radius' => $location->getRadius(),
-                'visited' => $is_visited ? 'true' : 'false',
+                'visited' => $is_visited,
                 'url' => ILIAS_HTTP_PATH . '/go/xsrl/' . $learnplace_ref_id,
                 'color' => $learnplace_item['color'],
                 'tag_name' => $learnplace_item['tag_name'],
