@@ -112,7 +112,7 @@ class TourView
 
         $tree_data = $this->tour_model->recurseTree($context_ref_id);
 
-        return $this->factory->tree()->expandable("Lernorte", new RepositoryTreeRecursion($this->dic))
+        return $this->factory->tree()->expandable("Lernorte", new RepositoryTreeRecursion($this->dic, $this->tour_model))
             ->withData([$tree_data])
             ->withEnvironment([
                 'map_id' => $this->map_id,

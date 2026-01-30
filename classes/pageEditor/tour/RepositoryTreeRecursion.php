@@ -12,6 +12,7 @@ class RepositoryTreeRecursion implements TreeRecursion
 {
     public function __construct(
         protected Container $dic,
+        protected TourModel $tour_model,
     ) {
     }
 
@@ -22,7 +23,15 @@ class RepositoryTreeRecursion implements TreeRecursion
      */
     public function getChildren($record, $environment = null): array
     {
-        return $this->dic->repositoryTree()->getChildsByTypeFilter((int) $record['ref_id'], ['xsrl', 'cat', 'fold']);
+        $ref_id = (int) $record['ref_id'];
+
+        $children = $this->dic->repositoryTree()->getChildsByTypeFilter($ref_id, ['xsrl', 'cat', 'fold']);
+
+        if (in_array($record['type'], ['fold', 'cat', 'crs'])) {
+            $children = $this->tour_model->sortObjects(\ilObject::_lookupObjectId($ref_id), $children);
+        }
+
+        return $children;
     }
 
     /**
