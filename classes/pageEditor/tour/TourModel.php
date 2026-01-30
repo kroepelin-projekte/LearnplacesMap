@@ -379,4 +379,51 @@ class TourModel
 
         return $node_data;
     }
+
+    public function sortObjects(int $parent_obj_id, array $children): array
+    {
+        // sorting
+        $sort_settings = new \ilContainerSortingSettings($parent_obj_id);
+        $sort_direction = $sort_settings->getSortDirection();
+        $sort_mode = $sort_settings->getSortMode();
+
+        switch ($sort_mode) {
+            case \ilContainer::SORT_MANUAL:
+                $sorting = \ilContainerSorting::lookupPositions($parent_obj_id);
+                usort($children, function ($a, $b) use ($sorting) {
+                    $pos_a = $sorting[$a['ref_id']] ?? 999999;
+                    $pos_b = $sorting[$b['ref_id']] ?? 999999;
+                    return $pos_a <=> $pos_b;
+                });
+                break;
+            case \ilContainer::SORT_TITLE:
+                if ($sort_direction === \ilContainer::SORT_DIRECTION_ASC) {
+                    usort($children, function ($a, $b) {
+                        return strtolower($a['title']) <=> strtolower($b['title']);
+                    });
+                } else {
+                    usort($children, function ($a, $b) {
+                        return strtolower($b['title']) <=> strtolower($a['title']);
+                    });
+                }
+                break;
+            case \ilContainer::SORT_CREATION:
+                if ($sort_direction === \ilContainer::SORT_DIRECTION_ASC) {
+                    usort($children, function ($a, $b) {
+                        $date_a = \DateTime::createFromFormat('Y-m-d H:i:s', $a['create_date']);
+                        $date_b = \DateTime::createFromFormat('Y-m-d H:i:s', $b['create_date']);
+                        return $date_a <=> $date_b;
+                    });
+                } else {
+                    usort($children, function ($a, $b) {
+                        $date_a = \DateTime::createFromFormat('Y-m-d H:i:s', $a['create_date']);
+                        $date_b = \DateTime::createFromFormat('Y-m-d H:i:s', $b['create_date']);
+                        return $date_b <=> $date_a;
+                    });
+                }
+                break;
+        }
+
+        return $children;
+    }
 }
