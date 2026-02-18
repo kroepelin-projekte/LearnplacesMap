@@ -148,7 +148,10 @@ class TourView
         );
         $html_link_list = '<ol>' . implode('', $link_list) . '</ol>';
 
-        $popover_html = $this->learnplacesLinkListAccordion($html_link_list);
+        $description = empty($collection_data['description']) ? '' : $collection_data['description'] . '<br><br>';
+        $expandable_content_html = $this->learnplacesLinkListExpandable(
+            $description . $html_link_list
+        );
 
         $content_html = <<<HTML
             <script type="application/json" data-learnplaces-tour="learnplaces-tour-$this->map_id">
@@ -156,9 +159,8 @@ class TourView
             </script>
             <div class="learnplaces-tour-content">
                 <div class="left-column">
-                    <p>{$tour_map_data['description']}</p>
                     <div class="learnplaces-tour-links">
-                        $popover_html
+                        $expandable_content_html
                     </div>
                 </div>
                 <div class="right-colums">
@@ -181,27 +183,33 @@ class TourView
      * @param string $content
      * @return string
      */
-    private function learnplacesLinkListAccordion(string $content): string
+    private function learnplacesLinkListExpandable(string $content): string
     {
+        $show_label = $this->plugin->txt('show_more');
+        $hide_label = $this->plugin->txt('show_less');
 
+        $show_label_esc = htmlspecialchars($show_label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $hide_label_esc = htmlspecialchars($hide_label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
 
         $html = <<<HTML
-<div class="accordion" id="accordionExample">
-    <div class="accordion-item">
-        <h2 class="accordion-header" id="headingOne"></h2>
-        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
-        {$this->plugin->txt('learnplaces')}
-        </button>
-    </div>
-</div>
-HTML;
+            <div class="learnplaces-more" data-learnplaces-more>
+              <div class="learnplaces-more__content" data-learnplaces-more-content>
+                {$content}
+              </div>
+            
+              <button
+                type="button"
+                class="learnplaces-more__toggle"
+                data-learnplaces-more-toggle
+                data-label-more="{$show_label_esc}"
+                data-label-less="{$hide_label_esc}"
+                aria-expanded="false"
+              >
+                {$show_label_esc}
+              </button>
+            </div>
+            HTML;
 
-
-        $card = $this->factory->card()->standard('')->withSections(array($this->factory->legacy($content)));
-        $popover = $this->factory->popover()->standard($card)->withTitle($this->plugin->txt('learnplaces'));
-        $button = $this->factory->button()->standard($this->plugin->txt('show_learnplaces_button'), '#')
-            ->withOnClick($popover->getShowSignal());
-
-        return $this->dic->ui()->renderer()->render([$popover, $button]);
+        return $html;
     }
 }

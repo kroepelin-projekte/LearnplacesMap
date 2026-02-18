@@ -334,3 +334,71 @@ function initLearnplacesCollectionMaps() {
     });
   });
 }
+
+// Show More Button
+(function () {
+  var PREVIEW_HEIGHT = 245;
+
+  function updateOne(root) {
+    var content = root.querySelector('[data-learnplaces-more-content]');
+    var btn = root.querySelector('[data-learnplaces-more-toggle]');
+    if (!content || !btn) return;
+
+    // Wenn schon geöffnet, Button trotzdem sichtbar lassen (damit man wieder zuklappen kann)
+    if (root.classList.contains('is-open')) {
+      root.classList.add('has-overflow');
+      return;
+    }
+
+    // Overflow-Check: ist der echte Inhalt höher als die Preview?
+    // +1 gegen Rundungs-/Font-Rendering-Kantenfälle
+    var hasOverflow = content.scrollHeight > (PREVIEW_HEIGHT + 1);
+
+    if (hasOverflow) {
+      root.classList.add('has-overflow');
+      btn.disabled = false;
+    } else {
+      root.classList.remove('has-overflow');
+      btn.disabled = true;
+      btn.setAttribute('aria-expanded', 'false');
+    }
+  }
+
+  function updateAll() {
+    var roots = document.querySelectorAll('[data-learnplaces-more]');
+    roots.forEach(updateOne);
+  }
+
+  document.addEventListener('click', function (e) {
+    var btn = e.target && e.target.closest ? e.target.closest('[data-learnplaces-more-toggle]') : null;
+    if (!btn) return;
+
+    var root = btn.closest('[data-learnplaces-more]');
+    if (!root) return;
+
+    // Wenn kein Overflow: nix zu tun
+    if (!root.classList.contains('has-overflow')) return;
+
+    var isOpen = root.classList.toggle('is-open');
+    btn.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+
+    var more = btn.getAttribute('data-label-more') || 'Show more';
+    var less = btn.getAttribute('data-label-less') || 'Show less';
+    btn.textContent = isOpen ? less : more;
+
+    // nach Toggle nochmal prüfen (z.B. wenn man zuklappt)
+    updateOne(root);
+  });
+
+  // Initial messen (nach Layout)
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', updateAll);
+  } else {
+    updateAll();
+  }
+
+  // Bei Resize neu messen
+  window.addEventListener('resize', function () {
+    updateAll();
+  });
+})();

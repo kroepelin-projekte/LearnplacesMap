@@ -11,7 +11,6 @@ use ILIAS\UI\URLBuilder;
 use ilLearnplacesMapCollectionGUI;
 use ILIAS\UI\Component\Modal\Modal;
 use ILIAS\UI\Component\Table\Table;
-use Kpg\Plugins\LearnplacesMap\PageEditor\Tour\TourModel;
 
 class CollectionView
 {
@@ -113,7 +112,10 @@ class CollectionView
         $learnplaces_list = $collection_data['collection_learnplaces'];
 
         $list_html = $this->groupedLearnplacesHtml($learnplaces_list);
-        $popover_html = $this->learnplacesListPopover($list_html);
+        $description = empty($collection_data['description']) ? '' : $collection_data['description'] . '<br><br>';
+        $expandable_content_html = $this->learnplacesLinkListExpandable(
+            $description . $list_html
+        );
 
         $learnplaces_json = json_encode(['learnplaces' => $learnplaces_list], JSON_THROW_ON_ERROR);
 
@@ -123,9 +125,8 @@ class CollectionView
             </script>
             <div class="learnplaces-collection-content">
                 <div class="left-column">
-                    <p>{$collection_data['description']}</p>
                     <div class="learnplaces-collection-links">
-                        $popover_html
+                        $expandable_content_html
                     </div>
                 </div>
                 <div class="right-colums">
@@ -188,13 +189,33 @@ class CollectionView
      * @param string $content
      * @return string
      */
-    private function learnplacesListPopover(string $content): string
+    private function learnplacesLinkListExpandable(string $content): string
     {
-        $card = $this->factory->card()->standard('')->withSections(array($this->factory->legacy($content)));
-        $popover = $this->factory->popover()->standard($card)->withTitle($this->plugin->txt('learnplaces'));
-        $button = $this->factory->button()->standard($this->plugin->txt('show_learnplaces_button'), '#')
-            ->withOnClick($popover->getShowSignal());
+        $show_label = $this->plugin->txt('show_more');
+        $hide_label = $this->plugin->txt('show_less');
 
-        return $this->dic->ui()->renderer()->render([$popover, $button]);
+        $show_label_esc = htmlspecialchars($show_label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $hide_label_esc = htmlspecialchars($hide_label, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+
+        $html = <<<HTML
+            <div class="learnplaces-more" data-learnplaces-more>
+              <div class="learnplaces-more__content" data-learnplaces-more-content>
+                {$content}
+              </div>
+            
+              <button
+                type="button"
+                class="learnplaces-more__toggle"
+                data-learnplaces-more-toggle
+                data-label-more="{$show_label_esc}"
+                data-label-less="{$hide_label_esc}"
+                aria-expanded="false"
+              >
+                {$show_label_esc}
+              </button>
+            </div>
+            HTML;
+
+        return $html;
     }
 }
