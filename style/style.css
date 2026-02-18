@@ -108,3 +108,51 @@
 .ol-full-screen .ol-full-screen-true::after {
   content: "✖"; /* Schließen-Symbol */
 }
+
+
+
+/* map: show more button */
+.learnplaces-more__content {
+  position: relative;
+  max-height: 245px;
+  overflow: hidden;
+}
+
+/* Fade nach unten (nur wenn zugeklappt) */
+.learnplaces-more:not(.is-open) .learnplaces-more__content::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 60px;
+
+  /* Hintergrund ggf. anpassen, wenn der Container nicht weiß ist */
+  background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,1));
+  pointer-events: none;
+}
+
+.learnplaces-more.is-open .learnplaces-more__content {
+  max-height: none;
+  overflow: visible;
+}
+
+
+.learnplaces-more__toggle {
+  display: none;
+  margin-top: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  background: rgba(52, 73, 154, 0.9);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+}
+
+.learnplaces-more.has-overflow .learnplaces-more__toggle {
+  display: inline-flex;
+}
+
+.learnplaces-more:not(.has-overflow) .learnplaces-more__content::after {
+  display: none;
+}
