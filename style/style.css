@@ -65,20 +65,30 @@
   justify-content: center;
 }
 
-/* Hier definieren wir nun das EINZIGE Icon über das Pseudoelement */
 .ol-full-screen button::after {
-  font-size: 24px !important; /* Größe des Icons */
+  content: "" !important;
+  width: 24px;
+  height: 24px;
   display: block;
+
+  background-color: currentColor;
+
+  -webkit-mask-repeat: no-repeat;
+  -webkit-mask-position: center;
+  -webkit-mask-size: contain;
+  mask-repeat: no-repeat;
+  mask-position: center;
+  mask-size: contain;
 }
 
-/* Icon wenn Fullscreen AUS ist (Button bietet "Vollbild an") */
 .ol-full-screen .ol-full-screen-false::after {
-  content: "⛶" !important;
+  -webkit-mask-image: url("../images/fullscreen.svg");
+  mask-image: url("../images/fullscreen.svg");
 }
 
-/* Icon wenn Fullscreen AN ist (Button bietet "Schließen an") */
 .ol-full-screen .ol-full-screen-true::after {
-  content: "✖" !important;
+  -webkit-mask-image: url("../images/fullscreen-exit.svg");
+  mask-image: url("../images/fullscreen-exit.svg");
 }
 
 .ol-full-screen button:hover {

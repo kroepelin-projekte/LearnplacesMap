@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Kpg\Plugins\LearnplacesMap\PageEditor\Tour;
 
+use ilCtrlException;
 use ILIAS\UI\Component\Input\Container\Form\Standard;
 use ILIAS\UI\Factory;
 use ILIAS\UI\Component\Component;
@@ -33,8 +34,8 @@ class TourView
     }
 
     /**
-     * @param string $action
      * @return array{button: Component, modal: Component}
+     * @throws ilCtrlException
      */
     public function addItemModal(): array
     {
@@ -67,7 +68,7 @@ class TourView
 
     /**
      * @return Table
-     * @throws \ilCtrlException
+     * @throws ilCtrlException
      */
     public function getTable(): Table
     {
@@ -139,7 +140,7 @@ class TourView
         $link_list = array_map(fn($item) => "<li><a href='{$item['url']}' target='_self'>{$item['title']}</a></li>", $tour_map_data['tour_learnplaces']);
         $html_link_list = '<ol>' . implode('', $link_list) . '</ol>';
 
-        $popover_html = $this->learnplacesListPopover($html_link_list);
+        $popover_html = $this->learnplacesLinkListAccordion($html_link_list);
 
         $content_html = <<<HTML
             <script type="application/json" data-learnplaces-tour="learnplaces-tour-$this->map_id">
@@ -172,12 +173,26 @@ class TourView
      * @param string $content
      * @return string
      */
-    private function learnplacesListPopover(string $content): string
+    private function learnplacesLinkListAccordion(string $content): string
     {
+
+
+        $html = <<<HTML
+<div class="accordion" id="accordionExample">
+    <div class="accordion-item">
+        <h2 class="accordion-header" id="headingOne"></h2>
+        <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+        {$this->plugin->txt('learnplaces')}
+        </button>
+    </div>
+</div>
+HTML;
+
+
         $card = $this->factory->card()->standard('')->withSections(array($this->factory->legacy($content)));
         $popover = $this->factory->popover()->standard($card)->withTitle($this->plugin->txt('learnplaces'));
         $button = $this->factory->button()->standard($this->plugin->txt('show_learnplaces_button'), '#')
-                                ->withOnClick($popover->getShowSignal());
+            ->withOnClick($popover->getShowSignal());
 
         return $this->dic->ui()->renderer()->render([$popover, $button]);
     }
