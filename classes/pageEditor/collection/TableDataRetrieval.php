@@ -99,7 +99,7 @@ class TableDataRetrieval implements DataRetrieval
     {
         $obj_learnplace = PluginContainer::resolve(LearnplaceRepository::class)->findByObjectId(\ilObject::_lookupObjId($learnplace_ref_id));
         $learn_place_config = $obj_learnplace->getConfiguration();
-        $array_tags = trim($learn_place_config->getTags(), ',');
+        $array_tags = trim($learn_place_config->getTags() ?? '', ',');
         $array_tags = explode(',', $array_tags);
         $array_tags = array_map('trim', $array_tags);
         $array_tags = array_filter($array_tags);
