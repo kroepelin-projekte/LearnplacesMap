@@ -268,7 +268,7 @@ class CollectionModel
                     continue;
                 }
 
-                $tags_string = $object_learnplace->getConfiguration()->getTags();
+                $tags_string = $object_learnplace->getConfiguration()->getTags() ?? '';
                 $tags_array = ($tags_string !== "")
                     ? array_map('trim', explode(',', $tags_string))
                     : [];
