@@ -112,18 +112,22 @@ class CollectionView
         $learnplaces_list = $collection_data['collection_learnplaces'];
 
         $list_html = $this->groupedLearnplacesHtml($learnplaces_list);
-        $description = empty($collection_data['description']) ? '' : $collection_data['description'] . '<br><br>';
+        $description = htmlspecialchars($collection_data['description'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $expandable_content_html = $this->learnplacesLinkListExpandable(
             $description . $list_html
         );
 
         $learnplaces_json = json_encode(['learnplaces' => $learnplaces_list], JSON_THROW_ON_ERROR);
 
+        $title_esc = htmlspecialchars($collection_data['title'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $section_title_id = "learnplaces-collection-title-$this->map_id";
+
         $content_html = <<<HTML
             <script type="application/json" data-learnplaces-collection="learnplaces-collection-$this->map_id">
             {$learnplaces_json}
             </script>
-            <div class="learnplaces-collection-content">
+            <section class="learnplaces-collection-content" aria-labelledby="$section_title_id">
+                <h3 id="$section_title_id" class="sr-only">$title_esc</h3>
                 <div class="left-column">
                     <div class="learnplaces-collection-links">
                         $expandable_content_html
@@ -134,12 +138,12 @@ class CollectionView
                         <div id="map-$this->map_id" style="width:100%; height:300px"></div>
                     </div>
                 </div>
-            </div>
+            </section>
             HTML;
 
         return $this->dic->ui()->renderer()->render(
             $this->dic->ui()->factory()->panel()->standard(
-                $collection_data['title'],
+                $title_esc,
                 $this->dic->ui()->factory()->legacy($content_html)
             )
         );

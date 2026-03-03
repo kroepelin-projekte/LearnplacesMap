@@ -148,16 +148,20 @@ class TourView
         );
         $html_link_list = '<ol>' . implode('', $link_list) . '</ol>';
 
-        $description = empty($tour_map_data['description']) ? '' : $tour_map_data['description'] . '<br><br>';
+        $description = htmlspecialchars($tour_map_data['description'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
         $expandable_content_html = $this->learnplacesLinkListExpandable(
             $description . $html_link_list
         );
+
+        $title_esc = htmlspecialchars($tour_map_data['title'], ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
+        $section_title_id = "learnplaces-tour-title-$this->map_id";
 
         $content_html = <<<HTML
             <script type="application/json" data-learnplaces-tour="learnplaces-tour-$this->map_id">
             {$learnplaces_json}
             </script>
-            <div class="learnplaces-tour-content">
+            <section class="learnplaces-tour-content" aria-labelledby="$section_title_id">
+                <h3 id="$section_title_id" class="sr-only">$title_esc</h3>
                 <div class="left-column">
                     <div class="learnplaces-tour-links">
                         $expandable_content_html
@@ -168,12 +172,12 @@ class TourView
                         <div id="map-$this->map_id" style="width:100%; height:300px"></div>
                     </div>
                 </div>
-            </div>
+            </section>
             HTML;
 
         return $this->dic->ui()->renderer()->render(
             $this->dic->ui()->factory()->panel()->standard(
-                $tour_map_data['title'],
+                $title_esc,
                 $this->dic->ui()->factory()->legacy($content_html)
             )
         );
