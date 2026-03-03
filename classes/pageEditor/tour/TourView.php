@@ -140,7 +140,7 @@ class TourView
         $link_list = array_map(fn($item) => "<li><a href='{$item['url']}' target='_self'>{$item['title']}</a></li>", $tour_map_data['tour_learnplaces']);
         $html_link_list = '<ol>' . implode('', $link_list) . '</ol>';
 
-        $description = empty($collection_data['description']) ? '' : $collection_data['description'] . '<br><br>';
+        $description = empty($tour_map_data['description']) ? '' : $tour_map_data['description'] . '<br><br>';
         $expandable_content_html = $this->learnplacesLinkListExpandable(
             $description . $html_link_list
         );
